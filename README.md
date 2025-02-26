@@ -1,4 +1,4 @@
-# doc_for
+# `doc_for`
 
 [![GitHub License](https://img.shields.io/github/license/PRO-2684/doc_for?logo=opensourceinitiative)](https://github.com/PRO-2684/doc_for/blob/main/LICENSE)
 [![Crates.io Version](https://img.shields.io/crates/v/doc_for?logo=rust)](https://crates.io/crates/doc_for)
@@ -91,7 +91,7 @@ union MyUnion {
 assert_eq!(doc_for!(MyUnion), " Union documentation");
 ```
 
-### Get the documentation comment for sub-items
+### Get the documentation comment for fields and variants
 
 This time, bring `DocSub` and `doc_sub!` into scope:
 
@@ -128,6 +128,22 @@ assert_eq!(doc_sub!(MyStruct, not_documented).unwrap(), "");
 assert_eq!(doc_sub!(MyStruct, non_existent), None);
 ```
 
+Similarly, it also works with union fields (not listed here) and enum variants:
+
+```rust
+# use doc_for::{DocSub, doc_sub};
+#
+#[derive(DocSub)]
+enum MyEnum {
+    /// Variant documentation
+    Variant,
+    NotDocumented,
+}
+assert_eq!(doc_sub!(MyEnum, Variant).unwrap(), " Variant documentation");
+assert_eq!(doc_sub!(MyEnum, NotDocumented).unwrap(), "");
+assert_eq!(doc_sub!(MyEnum, NonExistent), None);
+```
+
 ## ⚙️ Implementation
 
 ### `doc_for` & `DocFor`
@@ -144,14 +160,26 @@ Using these APIs is zero-cost, as all the work is done at compile-time:
 - When compiled, types that derive `DocFor` will have their documentation comments inlined as associated constants
 - Calls to `doc_for!` will be replaced with the value of the associated constant
 
+### `doc_sub` & `DocSub`
+
+The `doc_for` crate also provides a `DocSub` trait and a `doc_sub!` macro:
+
+- The `DocSub` trait requires an associated function `doc_sub(&str) -> Option<&'static str>` to be implemented for the type
+- Calls to `doc_sub!` will call this function with the given sub-item name
+
+The `doc_sub_derive` crate provides a derive macro for the `DocSub` trait, which implements the `doc_sub` function for the type.
+
+Using these APIs is not quite zero-cost, as the `doc_sub` function is called at runtime. However, it only does a pattern match on the given sub-item name, so the performance impact should be negligible.
+
 ## ✅ TODO
 
 - [ ] Strip each line of the documentation comment, via a `strip` attribute
 - [ ] Access module documentation (e.g. `doc_for!(my_module)`)
 - [ ] Access trait documentation (e.g. `doc_for!(MyTrait)`)
 - [ ] Access sub-item documentation
-    - [x] Access field documentation (e.g. `doc_sub!(MyStruct::field)`)
-    - [ ] Access method documentation (e.g. `doc_for!(MyStruct::method)`)
-    - [ ] Access associated constant documentation (e.g. `doc_for!(MyStruct::CONSTANT)`)
-    - [ ] Access associated type documentation (e.g. `doc_for!(MyStruct::Type)`)
-    - [ ] Access enum variant documentation (e.g. `doc_for!(MyEnum::Variant)`)
+    - [x] Access field documentation (e.g. `doc_sub!(MyStruct, field)` or `doc_sub!(MyUnion, field)`)
+    - [x] Access enum variant documentation (e.g. `doc_sub!(MyEnum, Variant)`)
+    - [ ] Access enum variant instance documentation (e.g. `doc_sub!(my_enum_variant)`)
+    - [ ] Access method documentation (e.g. `doc_sub!(MyStruct, method)`)
+    - [ ] Access associated constant documentation (e.g. `doc_sub!(MyStruct, CONSTANT)`)
+    - [ ] Access associated type documentation (e.g. `doc_sub!(MyStruct, Type)`)

@@ -27,7 +27,7 @@ fn doc_for_renamed() {
 }
 
 #[test]
-fn doc_for_override() {
+fn doc_for_override_trait() {
     use doc_for::{doc_for, DocFor as RenamedDocFor};
 
     trait DocFor {
@@ -38,6 +38,23 @@ fn doc_for_override() {
     #[derive(RenamedDocFor)]
     struct MyStruct {
         field: i32,
+    }
+
+    assert_eq!(doc_for!(MyStruct), " Some documentation");
+}
+
+#[test]
+fn doc_for_override_const() {
+    use doc_for::{doc_for, DocFor as RenamedDocFor};
+
+    /// Some documentation
+    #[derive(RenamedDocFor)]
+    struct MyStruct {
+        field: i32,
+    }
+
+    impl MyStruct {
+        const DOC: &'static str = " Some other documentation";
     }
 
     assert_eq!(doc_for!(MyStruct), " Some documentation");
@@ -99,7 +116,7 @@ fn doc_for_union() {
 }
 
 #[test]
-fn doc_sub_field() {
+fn doc_sub_struct() {
     use doc_for::{doc_sub, DocSub};
 
     #[derive(DocSub)]
@@ -112,4 +129,36 @@ fn doc_sub_field() {
     assert_eq!(doc_sub!(MyStruct, field).unwrap(), " Field documentation");
     assert_eq!(doc_sub!(MyStruct, not_documented).unwrap(), "");
     assert_eq!(doc_sub!(MyStruct, unknown_field), None);
+}
+
+#[test]
+fn doc_sub_enum() {
+    use doc_for::{doc_sub, DocSub};
+
+    #[derive(DocSub)]
+    enum MyEnum {
+        /// Variant documentation
+        Variant,
+        NotDocumented,
+    }
+
+    assert_eq!(doc_sub!(MyEnum, Variant).unwrap(), " Variant documentation");
+    assert_eq!(doc_sub!(MyEnum, NotDocumented).unwrap(), "");
+    assert_eq!(doc_sub!(MyEnum, UnknownVariant), None);
+}
+
+#[test]
+fn doc_sub_union() {
+    use doc_for::{doc_sub, DocSub};
+
+    #[derive(DocSub)]
+    union MyUnion {
+        /// Field documentation
+        field: i32,
+        not_documented: i32,
+    }
+
+    assert_eq!(doc_sub!(MyUnion, field).unwrap(), " Field documentation");
+    assert_eq!(doc_sub!(MyUnion, not_documented).unwrap(), "");
+    assert_eq!(doc_sub!(MyUnion, unknown_field), None);
 }

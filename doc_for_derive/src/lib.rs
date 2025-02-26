@@ -47,7 +47,7 @@ pub fn doc_sub_derive(input: TokenStream) -> TokenStream {
     let name = input.ident;
 
     // Generate DocSub implementation for structs with named fields.
-    let fn_doc_sub = match input.data {
+    let doc_sub_body = match input.data {
         Data::Struct(data_struct) => match data_struct.fields {
             Fields::Named(fields) => {
                 let field_matches = fields.named.into_iter().map(|field| {
@@ -59,7 +59,7 @@ pub fn doc_sub_derive(input: TokenStream) -> TokenStream {
                     }
                 });
                 quote! {
-                    match field {
+                    match name {
                         #(#field_matches)*
                         _ => None,
                     }
@@ -69,15 +69,44 @@ pub fn doc_sub_derive(input: TokenStream) -> TokenStream {
                 None
             },
         },
-        _ => quote! {
-            None
-        },
+        Data::Union(data_union) => {
+            let field_matches = data_union.fields.named.into_iter().map(|field| {
+                let field_name = field.ident.unwrap().to_string();
+                let field_doc = get_doc(field.attrs);
+                let lit_field_doc = LitStr::new(&field_doc, Span::call_site());
+                quote! {
+                    #field_name => Some(#lit_field_doc),
+                }
+            });
+            quote! {
+                match name {
+                    #(#field_matches)*
+                    _ => None,
+                }
+            }
+        }
+        Data::Enum(data_enum) => {
+            let variant_matches = data_enum.variants.into_iter().map(|variant| {
+                let variant_name = variant.ident.to_string();
+                let variant_doc = get_doc(variant.attrs);
+                let lit_variant_doc = LitStr::new(&variant_doc, Span::call_site());
+                quote! {
+                    #variant_name => Some(#lit_variant_doc),
+                }
+            });
+            quote! {
+                match name {
+                    #(#variant_matches)*
+                    _ => None,
+                }
+            }
+        }
     };
 
     let expanded = quote! {
         impl ::doc_for::DocSub for #name {
-            fn doc_sub(field: &str) -> Option<&'static str> {
-                #fn_doc_sub
+            fn doc_sub(name: &str) -> Option<&'static str> {
+                #doc_sub_body
             }
         }
     };
