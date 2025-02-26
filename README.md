@@ -5,7 +5,12 @@
 [![Crates.io Total Downloads](https://img.shields.io/crates/d/doc_for?logo=rust)](https://crates.io/crates/doc_for)
 [![docs.rs](https://img.shields.io/docsrs/doc_for?logo=rust)](https://docs.rs/doc_for)
 
-📖 Get the documentation comment for a [type](https://doc.rust-lang.org/reference/types.html).
+📖 Get the documentation comment for structs, enums and unions.
+
+## 🪄 Features
+
+- **Zero-cost**: All work is done at compile-time
+- **Simple**: Just derive the `DocFor` trait and use the `doc_for!` macro
 
 ## 🤔 Usage
 
@@ -15,7 +20,7 @@ First, bring `DocFor` and `doc_for!` into scope:
 use doc_for::{DocFor, doc_for};
 ```
 
-Then, derive the `DocFor` trait for your type:
+Then, derive the `DocFor` trait for your struct:
 
 ```rust
 # use doc_for::{DocFor, doc_for};
@@ -83,6 +88,20 @@ union MyUnion {
 }
 assert_eq!(doc_for!(MyUnion), " Union documentation");
 ```
+
+## ⚙️ Implementation
+
+The `doc_for` crate provides a `DocFor` trait and a `doc_for!` macro:
+
+- The `DocFor` trait requires an associated constant `DOC` to be implemented for the type
+- The `doc_for!` macro retrieves the value of this constant
+
+The `doc_for_derive` crate provides a derive macro for the `DocFor` trait, which simply sets the `DOC` constant as the documentation comment of the type.
+
+Using this crate is zero-cost, as all the work is done at compile-time:
+
+- When compiled, types that derive `DocFor` will have their documentation comments inlined as associated constants
+- Calls to `doc_for!` will be replaced with the value of the associated constant
 
 ## ✅ TODO
 
