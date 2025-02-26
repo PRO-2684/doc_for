@@ -2,6 +2,12 @@
 name = "doc_for_derive"
 version = "0.1.0"
 edition = "2021"
+include = ["/src"]
+repository = "https://github.com/PRO-2684/doc_for"
+license = "GPL-3.0-or-later"
+description = "Derive macro for [`doc_for`](https://crates.io/crates/doc_for) crate, not intended to be used directly. See the [`doc_for` documentation](https://docs.rs/doc_for) for more information."
+keywords = ["doc", "documentation", "comment", "rust", "proc-macro"]
+categories = ["development-tools"]
 
 [lib]
 proc-macro = true
