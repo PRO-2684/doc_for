@@ -162,3 +162,59 @@ fn doc_sub_union() {
     assert_eq!(doc_sub!(MyUnion, not_documented).unwrap(), "");
     assert_eq!(doc_sub!(MyUnion, unknown_field), None);
 }
+
+#[test]
+fn mixed_struct() {
+    use doc_for::{doc_for, doc_sub, DocFor, DocSub};
+
+    /// Some documentation
+    #[derive(DocFor, DocSub)]
+    struct MyStruct {
+        /// Field documentation
+        field: i32,
+        not_documented: i32,
+    }
+
+    assert_eq!(doc_for!(MyStruct), " Some documentation");
+    assert_eq!(doc_sub!(MyStruct, field).unwrap(), " Field documentation");
+    assert_eq!(doc_sub!(MyStruct, not_documented).unwrap(), "");
+    assert_eq!(doc_sub!(MyStruct, unknown_field), None);
+}
+
+#[test]
+fn mixed_enum() {
+    use doc_for::{doc_for, doc_sub, DocFor, DocSub};
+
+    /// Some documentation
+    #[derive(DocFor, DocSub)]
+    enum MyEnum {
+        /// Variant documentation
+        Variant,
+        NotDocumented,
+    }
+
+    assert_eq!(doc_for!(MyEnum), " Some documentation");
+    assert_eq!(doc_sub!(MyEnum, Variant).unwrap(), " Variant documentation");
+    assert_eq!(doc_sub!(MyEnum, NotDocumented).unwrap(), "");
+    assert_eq!(doc_sub!(MyEnum, UnknownVariant), None);
+}
+
+#[test]
+fn mixed_union() {
+    use doc_for::{doc_for, doc_sub, DocFor, DocSub};
+
+    /// Some documentation
+    #[derive(DocFor, DocSub)]
+    union MyUnion {
+        /// Field documentation
+        field: i32,
+        not_documented: i32,
+    }
+
+    assert_eq!(doc_for!(MyUnion), " Some documentation");
+    assert_eq!(doc_sub!(MyUnion, field).unwrap(), " Field documentation");
+    assert_eq!(doc_sub!(MyUnion, not_documented).unwrap(), "");
+    assert_eq!(doc_sub!(MyUnion, unknown_field), None);
+}
+
+
