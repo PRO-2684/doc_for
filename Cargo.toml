@@ -11,4 +11,4 @@ keywords = ["doc", "documentation", "comment", "rust", "proc-macro"]
 categories = ["development-tools"]
 
 [dependencies]
-doc_for_derive = { path = "doc_for_derive" }
+doc_for_derive = { path = "doc_for_derive", version = "0.1.0" }
