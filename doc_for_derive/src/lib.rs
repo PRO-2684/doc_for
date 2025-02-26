@@ -27,11 +27,11 @@ pub fn doc_for_derive(input: TokenStream) -> TokenStream {
             Some(lit_str.value())
         })
         .collect();
+
     let doc = doc_lines.join("\n");
     let lit_doc = syn::LitStr::new(&doc, Span::call_site());
-
     let expanded = quote! {
-        impl DocFor for #name {
+        impl ::doc_for::DocFor for #name {
             const DOC: &'static str = #lit_doc;
         }
     };
