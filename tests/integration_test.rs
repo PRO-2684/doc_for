@@ -44,6 +44,23 @@ fn doc_for_override() {
 }
 
 #[test]
+fn doc_for_sub() {
+    use doc_for::doc_for;
+
+    mod sub {
+        use doc_for::DocFor;
+
+        /// Some documentation
+        #[derive(DocFor)]
+        pub struct MyStruct {
+            field: i32,
+        }
+    }
+
+    assert_eq!(doc_for!(sub::MyStruct), " Some documentation");
+}
+
+#[test]
 fn doc_for_tuple_struct() {
     use doc_for::{DocFor, doc_for};
 
@@ -68,20 +85,6 @@ fn doc_for_enum() {
     assert_eq!(doc_for!(MyEnum), " Some documentation");
 }
 
-// Not supported yet
-// #[test]
-// fn doc_for_enum_variant() {
-//     use doc_for::{DocFor, doc_for};
-
-//     #[derive(DocFor)]
-//     enum MyEnum {
-//         /// Variant documentation
-//         Variant,
-//     }
-
-//     assert_eq!(doc_for!(MyEnum::Variant), " Variant documentation");
-// }
-
 #[test]
 fn doc_for_union() {
     use doc_for::{DocFor, doc_for};
@@ -93,4 +96,20 @@ fn doc_for_union() {
     }
 
     assert_eq!(doc_for!(MyUnion), " Some documentation");
+}
+
+#[test]
+fn doc_sub_field() {
+    use doc_for::{DocSub, doc_sub};
+
+    #[derive(DocSub)]
+    struct MyStruct {
+        /// Field documentation
+        field: i32,
+        not_documented: i32,
+    }
+
+    assert_eq!(doc_sub!(MyStruct, field).unwrap(), " Field documentation");
+    assert_eq!(doc_sub!(MyStruct, not_documented).unwrap(), "");
+    assert_eq!(doc_sub!(MyStruct, unknown_field), None);
 }
