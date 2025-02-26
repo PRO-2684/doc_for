@@ -26,6 +26,26 @@ fn get_doc(attrs: Vec<syn::Attribute>) -> String {
     doc_lines.join("\n")
 }
 
+/// Generate the match arms for the `doc_sub` method.
+///
+/// Takes an iterator of (name, attributes) pairs and generates a match expression that returns the documentation for the given name.
+fn generate_arms<I>(iter: I) -> proc_macro2::TokenStream
+where
+    I: Iterator<Item = (String, Vec<syn::Attribute>)>,
+{
+    let arms = iter.map(|(name, attrs)| {
+        let doc = get_doc(attrs);
+        let lit_doc = LitStr::new(&doc, Span::call_site());
+        quote! { #name => Some(#lit_doc), }
+    });
+    quote! {
+        match name {
+            #(#arms)*
+            _ => None,
+        }
+    }
+}
+
 #[proc_macro_derive(DocFor)]
 pub fn doc_for_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -46,60 +66,24 @@ pub fn doc_sub_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = input.ident;
 
-    // Generate DocSub implementation for structs with named fields.
     let doc_sub_body = match input.data {
         Data::Struct(data_struct) => match data_struct.fields {
             Fields::Named(fields) => {
-                let field_matches = fields.named.into_iter().map(|field| {
-                    let field_name = field.ident.unwrap().to_string();
-                    let field_doc = get_doc(field.attrs);
-                    let lit_field_doc = LitStr::new(&field_doc, Span::call_site());
-                    quote! {
-                        #field_name => Some(#lit_field_doc),
-                    }
-                });
-                quote! {
-                    match name {
-                        #(#field_matches)*
-                        _ => None,
-                    }
-                }
+                generate_arms(fields.named.into_iter().map(|f| {
+                    (f.ident.unwrap().to_string(), f.attrs)
+                }))
             }
-            _ => quote! {
-                None
-            },
+            _ => quote! { None },
         },
         Data::Union(data_union) => {
-            let field_matches = data_union.fields.named.into_iter().map(|field| {
-                let field_name = field.ident.unwrap().to_string();
-                let field_doc = get_doc(field.attrs);
-                let lit_field_doc = LitStr::new(&field_doc, Span::call_site());
-                quote! {
-                    #field_name => Some(#lit_field_doc),
-                }
-            });
-            quote! {
-                match name {
-                    #(#field_matches)*
-                    _ => None,
-                }
-            }
+            generate_arms(data_union.fields.named.into_iter().map(|f| {
+                (f.ident.unwrap().to_string(), f.attrs)
+            }))
         }
         Data::Enum(data_enum) => {
-            let variant_matches = data_enum.variants.into_iter().map(|variant| {
-                let variant_name = variant.ident.to_string();
-                let variant_doc = get_doc(variant.attrs);
-                let lit_variant_doc = LitStr::new(&variant_doc, Span::call_site());
-                quote! {
-                    #variant_name => Some(#lit_variant_doc),
-                }
-            });
-            quote! {
-                match name {
-                    #(#variant_matches)*
-                    _ => None,
-                }
-            }
+            generate_arms(data_enum.variants.into_iter().map(|v| {
+                (v.ident.to_string(), v.attrs)
+            }))
         }
     };
 
