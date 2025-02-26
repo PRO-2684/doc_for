@@ -2,7 +2,7 @@
 
 #[test]
 fn doc_for_struct() {
-    use doc_for::{DocFor, doc_for};
+    use doc_for::{doc_for, DocFor};
 
     /// Some documentation
     #[derive(DocFor)]
@@ -15,7 +15,7 @@ fn doc_for_struct() {
 
 #[test]
 fn doc_for_renamed() {
-    use doc_for::{DocFor as RenamedDocFor, doc_for};
+    use doc_for::{doc_for, DocFor as RenamedDocFor};
 
     /// Some documentation
     #[derive(RenamedDocFor)]
@@ -28,7 +28,7 @@ fn doc_for_renamed() {
 
 #[test]
 fn doc_for_override() {
-    use doc_for::{DocFor as RenamedDocFor, doc_for};
+    use doc_for::{doc_for, DocFor as RenamedDocFor};
 
     trait DocFor {
         const WHAT: &'static str;
@@ -62,7 +62,7 @@ fn doc_for_sub() {
 
 #[test]
 fn doc_for_tuple_struct() {
-    use doc_for::{DocFor, doc_for};
+    use doc_for::{doc_for, DocFor};
 
     /// Some documentation
     #[derive(DocFor)]
@@ -73,7 +73,7 @@ fn doc_for_tuple_struct() {
 
 #[test]
 fn doc_for_enum() {
-    use doc_for::{DocFor, doc_for};
+    use doc_for::{doc_for, DocFor};
 
     /// Some documentation
     #[derive(DocFor)]
@@ -87,7 +87,7 @@ fn doc_for_enum() {
 
 #[test]
 fn doc_for_union() {
-    use doc_for::{DocFor, doc_for};
+    use doc_for::{doc_for, DocFor};
 
     /// Some documentation
     #[derive(DocFor)]
@@ -100,7 +100,7 @@ fn doc_for_union() {
 
 #[test]
 fn doc_sub_field() {
-    use doc_for::{DocSub, doc_sub};
+    use doc_for::{doc_sub, DocSub};
 
     #[derive(DocSub)]
     struct MyStruct {

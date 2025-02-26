@@ -3,8 +3,9 @@
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Expr, Lit, Meta};
+use syn::{parse_macro_input, Data, DeriveInput, Expr, Fields, Lit, LitStr, Meta};
 
+/// Get the documentation comment from the attributes.
 fn get_doc(attrs: Vec<syn::Attribute>) -> String {
     let doc_lines: Vec<String> = attrs
         .into_iter()
@@ -46,39 +47,39 @@ pub fn doc_sub_derive(input: TokenStream) -> TokenStream {
     let name = input.ident;
 
     // Generate DocSub implementation for structs with named fields.
-    let sub_impl = if let syn::Data::Struct(data_struct) = input.data {
-        if let syn::Fields::Named(fields) = data_struct.fields {
-            let field_matches = fields.named.into_iter().map(|field| {
-                let field_name = field.ident.unwrap().to_string();
-                let field_doc = get_doc(field.attrs);
-                let lit_field_doc = syn::LitStr::new(&field_doc, Span::call_site());
+    let fn_doc_sub = match input.data {
+        Data::Struct(data_struct) => match data_struct.fields {
+            Fields::Named(fields) => {
+                let field_matches = fields.named.into_iter().map(|field| {
+                    let field_name = field.ident.unwrap().to_string();
+                    let field_doc = get_doc(field.attrs);
+                    let lit_field_doc = LitStr::new(&field_doc, Span::call_site());
+                    quote! {
+                        #field_name => Some(#lit_field_doc),
+                    }
+                });
                 quote! {
-                    #field_name => Some(#lit_field_doc),
-                }
-            });
-            quote! {
-                fn doc_sub(field: &str) -> Option<&'static str> {
                     match field {
                         #(#field_matches)*
                         _ => None,
                     }
                 }
             }
-        } else {
-            quote! {
-                fn doc_sub(_field: &str) -> Option<&'static str> { None }
-            }
-        }
-    } else {
-        quote! {
-            fn doc_sub(_field: &str) -> Option<&'static str> { None }
-        }
+            _ => quote! {
+                None
+            },
+        },
+        _ => quote! {
+            None
+        },
     };
 
     let expanded = quote! {
         impl ::doc_for::DocSub for #name {
-            #sub_impl
+            fn doc_sub(field: &str) -> Option<&'static str> {
+                #fn_doc_sub
+            }
         }
     };
-    TokenStream::from(expanded)
+    expanded.into()
 }

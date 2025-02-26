@@ -146,6 +146,7 @@ Using these APIs is zero-cost, as all the work is done at compile-time:
 
 ## ✅ TODO
 
+- [ ] Strip each line of the documentation comment, via a `strip` attribute
 - [ ] Access module documentation (e.g. `doc_for!(my_module)`)
 - [ ] Access trait documentation (e.g. `doc_for!(MyTrait)`)
 - [ ] Access sub-item documentation
