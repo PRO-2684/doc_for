@@ -8,7 +8,7 @@
 > [WARNING]
 > This crate is still in development, and the API is subject to BREAKING CHANGES.
 
-📖 Get the documentation comment for structs, enums and unions.
+📖 Get the documentation comment for structs, enums and unions, in a zero-cost fashion.
 
 ## 🪄 Features
 
@@ -245,19 +245,70 @@ Of course, trying to access a non-existent field or variant will also fail the c
 println!("{}", doc!(MyStruct, non_existent));
 ```
 
+### Get the documentation comment for an enum variant
+
+This time, bring `DocDyn` into scope:
+
+```rust
+use doc_for::DocDyn;
+```
+
+Then, derive the `DocDyn` trait for your enum:
+
+```rust
+# use doc_for::DocDyn;
+#
+#[derive(DocDyn)]
+enum MyEnum {
+    /// Variant documentation
+    Variant,
+    NotDocumented,
+}
+```
+
+Finally, call the `doc_dyn` method on the enum variant:
+
+```rust
+# use doc_for::DocDyn;
+#
+# #[derive(DocDyn)]
+# enum MyEnum {
+#     /// Variant documentation
+#     Variant,
+#     NotDocumented,
+# }
+assert_eq!(MyEnum::Variant.doc_dyn().unwrap(), " Variant documentation");
+assert!(MyEnum::NotDocumented.doc_dyn().is_none());
+```
+
+Note that this method is not zero-cost, as it matches the enum variant at runtime.
+
 ## ⚙️ Implementation
+
+### `DocFor` and `doc_for!`
 
 The `doc_for` crate provides a `DocFor` trait and a `doc_for!` macro:
 
 - The `DocFor` trait requires an associated constant `DOC` to be implemented for the type
-- Deriving the `DocFor` trait sets the `DOC` constant as the documentation comment of the type, and generates a `const fn doc_for_field(name: &'static str) -> Option<&'static str>` function
+- Deriving the `DocFor` trait sets the `DOC` constant as the documentation comment of the type, and generates a `const fn doc_for_field(name) -> Option<&'static str>` function
     - Currently Rust doesn't support constant functions in traits, so the `doc_for_field` function is implemented directly on the annotated type
+    - If the annotated type is a struct, union or enum, the `name` parameter accepts a `&'static str`
+    - If the annotated type is a tuple struct, the `name` parameter accepts an `usize`
 - If given a type, the `doc_for!` macro retrieves the value of this constant; If given a type and a field name, the `doc_for!` macro calls the `doc_for_field` function with the given field name
 
 Using these APIs is zero-cost, as all the work is done at compile-time:
 
 - When compiled, types that derive `DocFor` will have their documentation comments inlined as associated constants or in constant functions
 - Calls to `doc_for!` will be replaced with the value of the associated constant or the result of the constant function
+
+### `DocDyn` and `doc_dyn`
+
+The `doc_for` crate also provides a `DocDyn` trait and a `doc_dyn` method:
+
+- The `DocDyn` trait requires a `doc_dyn` method to be implemented for the type, which returns an `Option<&'static str>`
+- Deriving the `DocDyn` trait generates a `doc_dyn` method, which returns the documentation comment that matches the variant of the enum
+
+This method is not zero-cost, as it matches the enum variant at runtime.
 
 ## ✅ TODO
 
@@ -267,8 +318,8 @@ Using these APIs is zero-cost, as all the work is done at compile-time:
 - [ ] Access sub-item documentation
     - [x] Access field documentation (e.g. `doc_for!(MyStruct, field)` or `doc_for!(MyUnion, field)`)
     - [x] Access tuple struct field documentation (e.g. `doc_for!(MyTupleStruct, 0)`)
-    - [x] Access enum variant documentation (e.g. `doc_for!(MyEnum, Variant)`)
-    - [ ] Access enum variant instance documentation (e.g. `doc_for!(my_enum_variant)`)
+    - [x] Access enum variant documentation (statically) (e.g. `doc_for!(MyEnum, Variant)`)
+    - [x] Access enum variant documentation (dynamically) (e.g. `doc_for!(my_enum_variant)`)
     - [ ] Access method documentation (e.g. `doc_for!(MyStruct, method)`)
     - [ ] Access associated constant documentation (e.g. `doc_for!(MyStruct, CONSTANT)`)
     - [ ] Access associated type documentation (e.g. `doc_for!(MyStruct, Type)`)

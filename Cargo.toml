@@ -6,8 +6,8 @@ include = ["/src", "LICENSE", "README.md"]
 repository = "https://github.com/PRO-2684/doc_for"
 license = "GPL-3.0-or-later"
 readme = "README.md"
-description = "📖 Get the documentation comment for a type."
-keywords = ["doc", "documentation", "comment", "rust", "proc-macro"]
+description = "📖 Get the documentation comment for structs, enums and unions, in a zero-cost fashion."
+keywords = ["documentation", "documentation-comment", "zero-cost", "proc-macro"]
 categories = ["development-tools::procedural-macro-helpers"]
 
 [dependencies]

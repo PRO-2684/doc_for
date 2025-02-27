@@ -1,9 +1,14 @@
 #![doc = include_str!("../README.md")]
+#![deny(missing_docs)]
+#![warn(clippy::all, clippy::nursery, clippy::pedantic, clippy::cargo)]
 
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
-use syn::{parse_macro_input, Attribute, Data, DeriveInput, Expr, Fields, Ident, Lit, LitByteStr, LitInt, LitStr, Meta};
+use syn::{
+    parse_macro_input, Attribute, Data, DeriveInput, Expr, Fields, Ident, Lit, LitByteStr, LitInt,
+    LitStr, Meta,
+};
 
 /// Get the documentation comment from the attributes.
 fn get_doc(attrs: Vec<syn::Attribute>) -> Option<String> {
@@ -42,7 +47,7 @@ fn generate_arm_value(attrs: Vec<Attribute>) -> proc_macro2::TokenStream {
     }
 }
 
-/// Takes an iterator of (ident, attributes) pairs and generates a match expression that matches documentation. Used to generate the match arms for the `doc_for_field` method.
+/// Takes an iterator of (ident, attributes) pairs and generates a match expression that matches on field names. Used to generate the match arms for the `doc_for_field` method.
 fn generate_arms<I>(iter: I) -> proc_macro2::TokenStream
 where
     I: Iterator<Item = (Ident, Vec<syn::Attribute>)>,
@@ -63,7 +68,7 @@ where
     }
 }
 
-/// Takes an iterator of attributes and generates a match expression that matches documentation. Used to generate the match arms for the `doc_for_field` method.
+/// Takes an iterator of attributes and generates a match expression that matches on field indices. Used to generate the match arms for the `doc_for_field` method.
 fn generate_arms_index<I>(iter: I) -> proc_macro2::TokenStream
 where
     I: Iterator<Item = Vec<syn::Attribute>>,
@@ -77,6 +82,22 @@ where
         match field_index {
             #(#arms)*
             _ => ::core::panic!("The field or variant does not exist"),
+        }
+    }
+}
+
+/// Takes an iterator of (ident, attributes) pairs and generates a match expression that matches on varients. Used to generate the match arms for the `doc_dyn` method.
+fn generate_arms_enum<I>(iter: I) -> proc_macro2::TokenStream
+where
+    I: Iterator<Item = (Ident, Vec<syn::Attribute>)>,
+{
+    let arms = iter.map(|(ident, attrs)| {
+        let arm_value = generate_arm_value(attrs);
+        quote! { Self::#ident => #arm_value, }
+    });
+    quote! {
+        match self {
+            #(#arms)*
         }
     }
 }
@@ -116,13 +137,8 @@ pub fn doc_for_derive(input: TokenStream) -> TokenStream {
             ),
             Fields::Unnamed(fields) => {
                 numeric = true;
-                generate_arms_index(
-                    fields
-                        .unnamed
-                        .into_iter()
-                        .map(|f| f.attrs),
-                )
-            },
+                generate_arms_index(fields.unnamed.into_iter().map(|f| f.attrs))
+            }
             _ => quote! { ::core::option::Option::None },
         },
         Data::Union(data) => generate_arms(
@@ -149,6 +165,34 @@ pub fn doc_for_derive(input: TokenStream) -> TokenStream {
     let expanded = quote! {
         #doc_for_type_impl
         #doc_for_field_impl
+    };
+    expanded.into()
+}
+
+/// Derive `DocDyn`.
+///
+/// Derives the `DocDyn` trait for an enum type, which provides a `doc_dyn` method that returns the documentation comment for the variant.
+#[proc_macro_derive(DocDyn)]
+pub fn doc_dyn_derive(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let name = input.ident;
+
+    let doc_for_variant_body = match input.data {
+        Data::Enum(data) => {
+            generate_arms_enum(data.variants.into_iter().map(|v| (v.ident, v.attrs)))
+        }
+        _ => ::core::panic!("DocDyn can only be derived for enums"),
+    };
+    let doc_for_variant_impl = quote! {
+        impl ::doc_for::DocDyn for #name {
+            fn doc_dyn(&self) -> ::core::option::Option<&'static str> {
+                #doc_for_variant_body
+            }
+        }
+    };
+
+    let expanded = quote! {
+        #doc_for_variant_impl
     };
     expanded.into()
 }

@@ -272,3 +272,22 @@ fn doc_for_unwrap() {
     assert_eq!(doc!(MyStruct), " Some documentation");
     // println!("{}", doc!(MyStruct, field)); // Won't compile
 }
+
+#[test]
+fn doc_dyn() {
+    use doc_for::DocDyn;
+
+    /// Some documentation
+    #[derive(DocDyn)]
+    enum MyEnum {
+        /// Variant documentation
+        Variant1,
+        Variant2,
+    }
+
+    assert_eq!(
+        MyEnum::Variant1.doc_dyn().unwrap(),
+        " Variant documentation"
+    );
+    assert!(MyEnum::Variant2.doc_dyn().is_none());
+}

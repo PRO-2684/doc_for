@@ -2,12 +2,18 @@
 #![deny(missing_docs)]
 #![warn(clippy::all, clippy::nursery, clippy::pedantic, clippy::cargo)]
 
-pub use doc_for_derive::DocFor;
+pub use doc_for_derive::{DocDyn, DocFor};
 
 /// Trait for types that allows getting the documentation comment for the type.
 pub trait DocFor {
     /// The documentation comment for the type.
     const DOC: Option<&'static str>;
+}
+
+/// Trait for enums that allows getting the documentation comment for the variant.
+pub trait DocDyn {
+    /// The documentation comment for the variant.
+    fn doc_dyn(&self) -> Option<&'static str>;
 }
 
 /// Force compile-time evaluation. Used internally.

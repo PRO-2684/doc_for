@@ -7,7 +7,7 @@ repository = "https://github.com/PRO-2684/doc_for"
 license = "GPL-3.0-or-later"
 readme = "README.md"
 description = "Derive macro for `doc_for` crate."
-keywords = ["doc", "documentation", "comment", "rust", "proc-macro"]
+keywords = ["documentation", "documentation-comment", "zero-cost", "proc-macro"]
 categories = ["development-tools::procedural-macro-helpers"]
 
 [lib]
