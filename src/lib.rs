@@ -62,7 +62,7 @@ macro_rules! doc_for {
         // Tuple field (`field_<index>`)
         $crate::force_const!(
             Option<&'static str>,
-            <$t>::doc_for_field(concat!("field_", $index))
+            <$t>::doc_for_field($index)
         )
     };
 }

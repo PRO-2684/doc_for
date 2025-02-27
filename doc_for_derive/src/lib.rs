@@ -3,7 +3,7 @@
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
-use syn::{parse_macro_input, Data, DeriveInput, Expr, Fields, Ident, Lit, LitByteStr, LitStr, Meta};
+use syn::{parse_macro_input, Data, DeriveInput, Expr, Fields, Ident, Lit, LitByteStr, LitStr, LitInt, Meta};
 
 /// Get the documentation comment from the attributes.
 fn get_doc(attrs: Vec<syn::Attribute>) -> Option<String> {
@@ -36,21 +36,45 @@ where
     I: Iterator<Item = (Ident, Vec<syn::Attribute>)>,
 {
     let arms = iter.map(|(ident, attrs)| {
-        let name = ident.to_string();
+        let field_or_variant = ident.to_string();
         // Convert the name to a byte string literal (Rust doesn't allow matching on string literals in const functions).
-        let name = LitByteStr::new(name.as_bytes(), Span::call_site());
+        let field_or_variant = LitByteStr::new(field_or_variant.as_bytes(), Span::call_site());
         let doc = get_doc(attrs);
         match doc {
             Some(doc) => {
                 let lit_doc = LitStr::new(&doc, Span::call_site());
-                quote! { #name => ::core::option::Option::Some(#lit_doc), }
+                quote! { #field_or_variant => ::core::option::Option::Some(#lit_doc), }
             }
-            None => quote! { #name => ::core::option::Option::None, },
+            None => quote! { #field_or_variant => ::core::option::Option::None, },
         }
     });
     quote! {
-        let name_bytes = name.as_bytes();
+        let name_bytes = field_or_variant.as_bytes();
         match name_bytes {
+            #(#arms)*
+            _ => ::core::panic!("The field or variant does not exist"),
+        }
+    }
+}
+
+/// Takes an iterator of attributes and generates a match expression that matches documentation. Used to generate the match arms for the `doc_for_field` method.
+fn generate_arms_index<I>(iter: I) -> proc_macro2::TokenStream
+where
+    I: Iterator<Item = Vec<syn::Attribute>>,
+{
+    let arms = iter.enumerate().map(|(field_index, attrs)| {
+        let field_index = LitInt::new(&field_index.to_string(), Span::call_site());
+        let doc = get_doc(attrs);
+        match doc {
+            Some(doc) => {
+                let lit_doc = LitStr::new(&doc, Span::call_site());
+                quote! { #field_index => ::core::option::Option::Some(#lit_doc), }
+            }
+            None => quote! { #field_index => ::core::option::Option::None, },
+        }
+    });
+    quote! {
+        match field_index {
             #(#arms)*
             _ => ::core::panic!("The field or variant does not exist"),
         }
@@ -81,6 +105,7 @@ pub fn doc_for_derive(input: TokenStream) -> TokenStream {
     };
 
     // Get the documentation comments for the fields.
+    let mut numeric = false;
     let doc_for_field_body = match input.data {
         Data::Struct(data) => match data.fields {
             Fields::Named(fields) => generate_arms(
@@ -90,11 +115,13 @@ pub fn doc_for_derive(input: TokenStream) -> TokenStream {
                     .map(|f| (f.ident.unwrap(), f.attrs)),
             ),
             Fields::Unnamed(fields) => {
-                let fields = fields.unnamed.into_iter().enumerate().map(|(i, f)| {
-                    let ident = Ident::new(&format!("field_{}", i), Span::call_site()); // TODO: Actually match on index
-                    (ident, f.attrs)
-                });
-                generate_arms(fields)
+                numeric = true;
+                generate_arms_index(
+                    fields
+                        .unnamed
+                        .into_iter()
+                        .map(|f| f.attrs),
+                )
             },
             _ => quote! { ::core::option::Option::None },
         },
@@ -106,9 +133,14 @@ pub fn doc_for_derive(input: TokenStream) -> TokenStream {
         ),
         Data::Enum(data) => generate_arms(data.variants.into_iter().map(|v| (v.ident, v.attrs))),
     };
+    let doc_for_field_input = if numeric {
+        quote! { field_index: usize }
+    } else {
+        quote! { field_or_variant: &'static str }
+    };
     let doc_for_field_impl = quote! {
         impl #name {
-            const fn doc_for_field(name: &'static str) -> ::core::option::Option<&'static str> {
+            const fn doc_for_field(#doc_for_field_input) -> ::core::option::Option<&'static str> {
                 #doc_for_field_body
             }
         }
