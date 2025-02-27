@@ -135,7 +135,7 @@ Finally, use the `doc_for!` macro to get the documentation comment. If the field
 # }
 assert_eq!(doc_for!(MyStruct, field).unwrap(), " Field documentation");
 assert!(doc_for!(MyStruct, not_documented).is_none());
-// Won't compile because the field does not exist
+// Won't compile due to `Field does not exist`
 // assert_eq!(doc_for!(MyStruct, non_existent), None);
 ```
 
@@ -240,6 +240,7 @@ The `doc_for` crate provides a `DocFor` trait and a `doc_for!` macro:
 
 - The `DocFor` trait requires an associated constant `DOC` to be implemented for the type
 - Deriving the `DocFor` trait sets the `DOC` constant as the documentation comment of the type, and generates a `const fn doc_for_field(name: &'static str) -> Option<&'static str>` function
+    - Currently Rust doesn't support constant functions in traits, so the `doc_for_field` function is implemented directly on the annotated type
 - If given a type, the `doc_for!` macro retrieves the value of this constant; If given a type and a field name, the `doc_for!` macro calls the `doc_for_field` function with the given field name
 
 Using these APIs is zero-cost, as all the work is done at compile-time:

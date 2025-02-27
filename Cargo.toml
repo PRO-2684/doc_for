@@ -8,7 +8,7 @@ license = "GPL-3.0-or-later"
 readme = "README.md"
 description = "📖 Get the documentation comment for a type."
 keywords = ["doc", "documentation", "comment", "rust", "proc-macro"]
-categories = ["development-tools"]
+categories = ["development-tools::procedural-macro-helpers"]
 
 [dependencies]
 doc_for_derive = { path = "doc_for_derive", version = "0.1.1" }

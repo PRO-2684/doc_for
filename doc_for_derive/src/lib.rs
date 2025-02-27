@@ -43,16 +43,16 @@ where
         match doc {
             Some(doc) => {
                 let lit_doc = LitStr::new(&doc, Span::call_site());
-                quote! { #name => Some(#lit_doc), }
+                quote! { #name => ::core::option::Option::Some(#lit_doc), }
             }
-            None => quote! { #name => None, },
+            None => quote! { #name => ::core::option::Option::None, },
         }
     });
     quote! {
         let name_bytes = name.as_bytes();
         match name_bytes {
             #(#arms)*
-            _ => panic!("Field does not exist"),
+            _ => ::core::panic!("Field does not exist"),
         }
     }
 }
@@ -70,13 +70,13 @@ pub fn doc_for_derive(input: TokenStream) -> TokenStream {
     let doc_for_type_ret = match doc_for_type {
         Some(doc) => {
             let lit_doc = LitStr::new(&doc, Span::call_site());
-            quote! { Some(#lit_doc) }
+            quote! { ::core::option::Option::Some(#lit_doc) }
         }
-        None => quote! { None },
+        None => quote! { ::core::option::Option::None },
     };
     let doc_for_type_impl = quote! {
         impl ::doc_for::DocFor for #name {
-            const DOC: Option<&'static str> = #doc_for_type_ret;
+            const DOC: ::core::option::Option<&'static str> = #doc_for_type_ret;
         }
     };
 
@@ -89,7 +89,7 @@ pub fn doc_for_derive(input: TokenStream) -> TokenStream {
                     .into_iter()
                     .map(|f| (f.ident.unwrap(), f.attrs)),
             ),
-            _ => quote! { None },
+            _ => quote! { ::core::option::Option::None },
         },
         Data::Union(data) => generate_arms(
             data.fields
@@ -101,7 +101,7 @@ pub fn doc_for_derive(input: TokenStream) -> TokenStream {
     };
     let doc_for_field_impl = quote! {
         impl #name {
-            const fn doc_for_field(name: &'static str) -> Option<&'static str> {
+            const fn doc_for_field(name: &'static str) -> ::core::option::Option<&'static str> {
                 #doc_for_field_body
             }
         }
