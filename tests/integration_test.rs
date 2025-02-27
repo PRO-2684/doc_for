@@ -150,7 +150,7 @@ fn doc_for_sub_tuple_struct() {
     #[derive(DocFor)]
     struct MyStruct(
         /// Field documentation
-        i32
+        i32,
     );
 
     assert_eq!(doc_for!(MyStruct, 0).unwrap(), " Field documentation");
@@ -215,7 +215,7 @@ fn mixed_tuple_struct() {
     #[derive(DocFor)]
     struct MyStruct(
         /// Field documentation
-        i32
+        i32,
     );
 
     assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");

@@ -122,7 +122,7 @@ struct MyStruct {
 }
 ```
 
-Finally, use the `doc_for!` macro to get the documentation comment. If the field does not have a documentation comment, `doc_for!` will return `None`:
+Then, use the `doc_for!` macro to get the documentation comment. If the field does not have a documentation comment, `doc_for!` will return `None`:
 
 ```rust
 # use doc_for::{DocFor, doc_for};
@@ -135,11 +135,11 @@ Finally, use the `doc_for!` macro to get the documentation comment. If the field
 # }
 assert_eq!(doc_for!(MyStruct, field).unwrap(), " Field documentation");
 assert!(doc_for!(MyStruct, not_documented).is_none());
-// Won't compile due to `Field does not exist`
+// Won't compile due to `Field or variant does not exist`
 // assert_eq!(doc_for!(MyStruct, non_existent), None);
 ```
 
-If the field does not exist, `doc_for!` will panic, thus failing the compilation:
+If the field or variant does not exist, `doc_for!` will panic, thus failing the compilation:
 
 ```rust compile_fail
 # use doc_for::{DocFor, doc_for};
@@ -150,7 +150,7 @@ If the field does not exist, `doc_for!` will panic, thus failing the compilation
 #     field: i32,
 #     not_documented: i32,
 # }
-// Won't compile due to `Field does not exist`
+// Won't compile due to `Field or variant does not exist`
 assert_eq!(doc_for!(MyStruct, non_existent), None);
 ```
 
@@ -167,7 +167,7 @@ enum MyEnum {
 }
 assert_eq!(doc_for!(MyEnum, Variant).unwrap(), " Variant documentation");
 assert!(doc_for!(MyEnum, NotDocumented).is_none());
-// Won't compile because the variant does not exist
+// Won't compile due to `Field or variant does not exist`
 // assert_eq!(doc_for!(MyEnum, NonExistent), None);
 
 #[derive(DocFor)]
@@ -178,7 +178,7 @@ struct MyTupleStruct(
 );
 assert_eq!(doc_for!(MyTupleStruct, 0).unwrap(), " Tuple struct field documentation");
 assert!(doc_for!(MyTupleStruct, 1).is_none());
-// Won't compile because the field does not exist
+// Won't compile due to `Field or variant does not exist`
 // assert_eq!(doc_for!(MyTupleStruct, 2), None);
 ```
 
@@ -241,7 +241,7 @@ Of course, trying to access a non-existent field or variant will also fail the c
 #    not_documented: i32,
 # }
 #
-// Won't compile due to `Field does not exist`
+// Won't compile due to `Field or variant does not exist`
 println!("{}", doc!(MyStruct, non_existent));
 ```
 

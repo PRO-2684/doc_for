@@ -52,7 +52,7 @@ where
         let name_bytes = name.as_bytes();
         match name_bytes {
             #(#arms)*
-            _ => ::core::panic!("Field does not exist"),
+            _ => ::core::panic!("The field or variant does not exist"),
         }
     }
 }

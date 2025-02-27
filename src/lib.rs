@@ -14,12 +14,10 @@ pub trait DocFor {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! force_const {
-    ($t:ty, $e:expr) => {
-        {
-            const VALUE: $t = $e;
-            VALUE
-        }
-    };
+    ($t:ty, $e:expr) => {{
+        const VALUE: $t = $e;
+        VALUE
+    }};
 }
 
 /// Get the documentation comment for a type or its fields, returning `None` if not documented.
@@ -46,17 +44,26 @@ macro_rules! force_const {
 ///
 /// # Panics
 ///
-/// Panics and fails the compilation if the type does not derive `DocFor`, or if the field does not exist.
+/// Panics and fails the compilation if the type does not derive `DocFor`, or if the field or variant does not exist.
 #[macro_export]
 macro_rules! doc_for {
-    ($t:ty) => { // Type
+    ($t:ty) => {
+        // Type
         <$t as $crate::DocFor>::DOC
     };
-    ($t:ty, $field:ident) => { // Field
-        $crate::force_const!(Option<&'static str>, <$t>::doc_for_field(stringify!($field)))
+    ($t:ty, $field:ident) => {
+        // Field
+        $crate::force_const!(
+            Option<&'static str>,
+            <$t>::doc_for_field(stringify!($field))
+        )
     };
-    ($t:ty, $index:expr) => { // Tuple field (`field_<index>`)
-        $crate::force_const!(Option<&'static str>, <$t>::doc_for_field(concat!("field_", $index)))
+    ($t:ty, $index:expr) => {
+        // Tuple field (`field_<index>`)
+        $crate::force_const!(
+            Option<&'static str>,
+            <$t>::doc_for_field(concat!("field_", $index))
+        )
     };
 }
 
@@ -64,16 +71,25 @@ macro_rules! doc_for {
 ///
 /// # Panics
 ///
-/// Panics and fails the compilation if the type does not derive `DocFor`, the field does not exist, or not documented.
+/// Panics and fails the compilation if the type does not derive `DocFor`, the field or variant does not exist, or not documented.
 #[macro_export]
 macro_rules! doc {
     ($t:ty) => {
-        $crate::force_const!(&'static str, $crate::doc_for!($t).expect("The type is not documented"))
+        $crate::force_const!(
+            &'static str,
+            $crate::doc_for!($t).expect("The type is not documented")
+        )
     };
     ($t:ty, $field:ident) => {
-        $crate::force_const!(&'static str, $crate::doc_for!($t, $field).expect("The field is not documented"))
+        $crate::force_const!(
+            &'static str,
+            $crate::doc_for!($t, $field).expect("The field or variant is not documented")
+        )
     };
     ($t:ty, $index:expr) => {
-        $crate::force_const!(&'static str, $crate::doc_for!($t, $index).expect("The field is not documented"))
+        $crate::force_const!(
+            &'static str,
+            $crate::doc_for!($t, $index).expect("The field or variant is not documented")
+        )
     };
 }
