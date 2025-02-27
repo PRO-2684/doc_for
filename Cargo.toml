@@ -1,6 +1,6 @@
 [package]
 name = "doc_for"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 include = ["/src", "LICENSE", "README.md"]
 repository = "https://github.com/PRO-2684/doc_for"
@@ -11,4 +11,4 @@ keywords = ["doc", "documentation", "comment", "rust", "proc-macro"]
 categories = ["development-tools"]
 
 [dependencies]
-doc_for_derive = { path = "doc_for_derive", version = "0.1.0" }
+doc_for_derive = { path = "doc_for_derive", version = "0.1.1" }
