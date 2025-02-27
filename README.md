@@ -154,7 +154,7 @@ If the field does not exist, `doc_for!` will panic, thus failing the compilation
 assert_eq!(doc_for!(MyStruct, non_existent), None);
 ```
 
-Similarly, it also works with union fields (not listed here) and enum variants:
+Similarly, it also works with union fields (not listed here), enum variants and tuple struct fields:
 
 ```rust
 # use doc_for::{DocFor, doc_for};
@@ -169,6 +169,17 @@ assert_eq!(doc_for!(MyEnum, Variant).unwrap(), " Variant documentation");
 assert!(doc_for!(MyEnum, NotDocumented).is_none());
 // Won't compile because the variant does not exist
 // assert_eq!(doc_for!(MyEnum, NonExistent), None);
+
+#[derive(DocFor)]
+struct MyTupleStruct(
+    /// Tuple struct field documentation
+    i32,
+    i32,
+);
+assert_eq!(doc_for!(MyTupleStruct, 0).unwrap(), " Tuple struct field documentation");
+assert!(doc_for!(MyTupleStruct, 1).is_none());
+// Won't compile because the field does not exist
+// assert_eq!(doc_for!(MyTupleStruct, 2), None);
 ```
 
 ### If you don't care about the `Option`
@@ -255,6 +266,7 @@ Using these APIs is zero-cost, as all the work is done at compile-time:
 - [ ] Access trait documentation (e.g. `doc_for!(MyTrait)`)
 - [ ] Access sub-item documentation
     - [x] Access field documentation (e.g. `doc_for!(MyStruct, field)` or `doc_for!(MyUnion, field)`)
+    - [x] Access tuple struct field documentation (e.g. `doc_for!(MyTupleStruct, 0)`)
     - [x] Access enum variant documentation (e.g. `doc_for!(MyEnum, Variant)`)
     - [ ] Access enum variant instance documentation (e.g. `doc_for!(my_enum_variant)`)
     - [ ] Access method documentation (e.g. `doc_for!(MyStruct, method)`)

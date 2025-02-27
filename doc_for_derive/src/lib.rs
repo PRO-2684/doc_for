@@ -89,6 +89,13 @@ pub fn doc_for_derive(input: TokenStream) -> TokenStream {
                     .into_iter()
                     .map(|f| (f.ident.unwrap(), f.attrs)),
             ),
+            Fields::Unnamed(fields) => {
+                let fields = fields.unnamed.into_iter().enumerate().map(|(i, f)| {
+                    let ident = Ident::new(&format!("field_{}", i), Span::call_site()); // TODO: Actually match on index
+                    (ident, f.attrs)
+                });
+                generate_arms(fields)
+            },
             _ => quote! { ::core::option::Option::None },
         },
         Data::Union(data) => generate_arms(

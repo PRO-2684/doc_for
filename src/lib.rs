@@ -49,11 +49,14 @@ macro_rules! force_const {
 /// Panics and fails the compilation if the type does not derive `DocFor`, or if the field does not exist.
 #[macro_export]
 macro_rules! doc_for {
-    ($t:ty) => {
+    ($t:ty) => { // Type
         <$t as $crate::DocFor>::DOC
     };
-    ($t:ty, $field:ident) => {
+    ($t:ty, $field:ident) => { // Field
         $crate::force_const!(Option<&'static str>, <$t>::doc_for_field(stringify!($field)))
+    };
+    ($t:ty, $index:expr) => { // Tuple field (`field_<index>`)
+        $crate::force_const!(Option<&'static str>, <$t>::doc_for_field(concat!("field_", $index)))
     };
 }
 
@@ -69,5 +72,8 @@ macro_rules! doc {
     };
     ($t:ty, $field:ident) => {
         $crate::force_const!(&'static str, $crate::doc_for!($t, $field).expect("The field is not documented"))
+    };
+    ($t:ty, $index:expr) => {
+        $crate::force_const!(&'static str, $crate::doc_for!($t, $index).expect("The field is not documented"))
     };
 }

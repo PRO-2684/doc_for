@@ -143,19 +143,19 @@ fn doc_for_sub_struct() {
     // assert_eq!(doc_for!(MyStruct, unknown_field), None); // Won't compile
 }
 
-// #[test]
-// fn doc_for_sub_tuple_struct() {
-//     use doc_for::{doc_for, DocFor};
+#[test]
+fn doc_for_sub_tuple_struct() {
+    use doc_for::{doc_for, DocFor};
 
-//     #[derive(DocFor)]
-//     struct MyStruct(
-//         /// Field documentation
-//         i32
-//     );
+    #[derive(DocFor)]
+    struct MyStruct(
+        /// Field documentation
+        i32
+    );
 
-//     assert_eq!(doc_for!(MyStruct, 0).unwrap(), " Field documentation");
-//     assert_eq!(doc_for!(MyStruct, 1), None);
-// }
+    assert_eq!(doc_for!(MyStruct, 0).unwrap(), " Field documentation");
+    // assert_eq!(doc_for!(MyStruct, 1), None); // Won't compile
+}
 
 #[test]
 fn doc_for_sub_enum() {
@@ -207,21 +207,21 @@ fn mixed_struct() {
     // assert_eq!(doc_for!(MyStruct, unknown_field), None); // Won't compile
 }
 
-// #[test]
-// fn mixed_tuple_struct() {
-//     use doc_for::{doc_for, DocFor};
+#[test]
+fn mixed_tuple_struct() {
+    use doc_for::{doc_for, DocFor};
 
-//     /// Some documentation
-//     #[derive(DocFor)]
-//     struct MyStruct(
-//         /// Field documentation
-//         i32
-//     );
+    /// Some documentation
+    #[derive(DocFor)]
+    struct MyStruct(
+        /// Field documentation
+        i32
+    );
 
-//     assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
-//     assert_eq!(doc_for!(MyStruct, 0).unwrap(), "");
-//     assert_eq!(doc_for!(MyStruct, 1), None);
-// }
+    assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
+    assert_eq!(doc_for!(MyStruct, 0).unwrap(), " Field documentation");
+    // assert_eq!(doc_for!(MyStruct, 1), None); // Won't compile
+}
 
 #[test]
 fn mixed_enum() {
