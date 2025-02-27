@@ -3,7 +3,7 @@
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
-use syn::{parse_macro_input, Data, DeriveInput, Expr, Fields, Ident, Lit, LitByteStr, LitStr, LitInt, Meta};
+use syn::{parse_macro_input, Attribute, Data, DeriveInput, Expr, Fields, Ident, Lit, LitByteStr, LitInt, LitStr, Meta};
 
 /// Get the documentation comment from the attributes.
 fn get_doc(attrs: Vec<syn::Attribute>) -> Option<String> {
@@ -30,6 +30,18 @@ fn get_doc(attrs: Vec<syn::Attribute>) -> Option<String> {
     }
 }
 
+/// Generate the return value for a match arm, given the attributes of a field or variant. Used in the `generate_arms` and `generate_arms_index` functions.
+fn generate_arm_value(attrs: Vec<Attribute>) -> proc_macro2::TokenStream {
+    let doc = get_doc(attrs);
+    match doc {
+        Some(doc) => {
+            let lit_doc = LitStr::new(&doc, Span::call_site());
+            quote! { ::core::option::Option::Some(#lit_doc) }
+        }
+        None => quote! { ::core::option::Option::None },
+    }
+}
+
 /// Takes an iterator of (ident, attributes) pairs and generates a match expression that matches documentation. Used to generate the match arms for the `doc_for_field` method.
 fn generate_arms<I>(iter: I) -> proc_macro2::TokenStream
 where
@@ -39,14 +51,8 @@ where
         let field_or_variant = ident.to_string();
         // Convert the name to a byte string literal (Rust doesn't allow matching on string literals in const functions).
         let field_or_variant = LitByteStr::new(field_or_variant.as_bytes(), Span::call_site());
-        let doc = get_doc(attrs);
-        match doc {
-            Some(doc) => {
-                let lit_doc = LitStr::new(&doc, Span::call_site());
-                quote! { #field_or_variant => ::core::option::Option::Some(#lit_doc), }
-            }
-            None => quote! { #field_or_variant => ::core::option::Option::None, },
-        }
+        let arm_value = generate_arm_value(attrs);
+        quote! { #field_or_variant => #arm_value, }
     });
     quote! {
         let name_bytes = field_or_variant.as_bytes();
@@ -64,14 +70,8 @@ where
 {
     let arms = iter.enumerate().map(|(field_index, attrs)| {
         let field_index = LitInt::new(&field_index.to_string(), Span::call_site());
-        let doc = get_doc(attrs);
-        match doc {
-            Some(doc) => {
-                let lit_doc = LitStr::new(&doc, Span::call_site());
-                quote! { #field_index => ::core::option::Option::Some(#lit_doc), }
-            }
-            None => quote! { #field_index => ::core::option::Option::None, },
-        }
+        let arm_value = generate_arm_value(attrs);
+        quote! { #field_index => #arm_value, }
     });
     quote! {
         match field_index {
