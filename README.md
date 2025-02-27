@@ -93,18 +93,12 @@ assert_eq!(doc_for!(MyUnion), " Union documentation");
 
 ### Get the documentation comment for fields and variants
 
-This time, bring `DocSub` and `doc_sub!` into scope:
+Same as before, bring `DocFor` and `doc_for!` into scope and derive the `DocFor` trait for your struct:
 
 ```rust
-use doc_for::{DocSub, doc_sub};
-```
+use doc_for::{DocFor, doc_for};
 
-Then, derive the `DocSub` trait for your struct:
-
-```rust
-# use doc_for::{DocSub, doc_sub};
-#
-#[derive(DocSub)]
+#[derive(DocFor)]
 struct MyStruct {
     /// Field documentation
     field: i32,
@@ -112,64 +106,50 @@ struct MyStruct {
 }
 ```
 
-Finally, use the `doc_sub!` macro to get the documentation comment. If the field does not have a documentation comment, `doc_sub!` will return `Some("")`; If the field does not exist, `doc_sub!` will return `None`.
+Finally, use the `doc_for!` macro to get the documentation comment. If the field does not have a documentation comment, `doc_for!` will return `Some("")`; If the field does not exist, `doc_for!` will return `None`.
 
 ```rust
-# use doc_for::{DocSub, doc_sub};
+# use doc_for::{DocFor, doc_for};
 #
-# #[derive(DocSub)]
+# #[derive(DocFor)]
 # struct MyStruct {
 #     /// Field documentation
 #     field: i32,
 #     not_documented: i32,
 # }
-assert_eq!(doc_sub!(MyStruct, field).unwrap(), " Field documentation");
-assert_eq!(doc_sub!(MyStruct, not_documented).unwrap(), "");
-assert_eq!(doc_sub!(MyStruct, non_existent), None);
+assert_eq!(doc_for!(MyStruct, field).unwrap(), " Field documentation");
+assert_eq!(doc_for!(MyStruct, not_documented).unwrap(), "");
+assert_eq!(doc_for!(MyStruct, non_existent), None);
 ```
 
 Similarly, it also works with union fields (not listed here) and enum variants:
 
 ```rust
-# use doc_for::{DocSub, doc_sub};
+# use doc_for::{DocFor, doc_for};
 #
-#[derive(DocSub)]
+#[derive(DocFor)]
 enum MyEnum {
     /// Variant documentation
     Variant,
     NotDocumented,
 }
-assert_eq!(doc_sub!(MyEnum, Variant).unwrap(), " Variant documentation");
-assert_eq!(doc_sub!(MyEnum, NotDocumented).unwrap(), "");
-assert_eq!(doc_sub!(MyEnum, NonExistent), None);
+assert_eq!(doc_for!(MyEnum, Variant).unwrap(), " Variant documentation");
+assert_eq!(doc_for!(MyEnum, NotDocumented).unwrap(), "");
+assert_eq!(doc_for!(MyEnum, NonExistent), None);
 ```
 
 ## ⚙️ Implementation
 
-### `doc_for` & `DocFor`
-
 The `doc_for` crate provides a `DocFor` trait and a `doc_for!` macro:
 
 - The `DocFor` trait requires an associated constant `DOC` to be implemented for the type
-- The `doc_for!` macro retrieves the value of this constant
-
-The `doc_for_derive` crate provides a derive macro for the `DocFor` trait, which simply sets the `DOC` constant as the documentation comment of the type.
+- Deriving the `DocFor` trait sets the `DOC` constant as the documentation comment of the type, and generates a `const fn doc_for_field(name: &'static str) -> Option<&'static str>` function
+- If given a type, the `doc_for!` macro retrieves the value of this constant; If given a type and a field name, the `doc_for!` macro calls the `doc_for_field` function with the given field name
 
 Using these APIs is zero-cost, as all the work is done at compile-time:
 
-- When compiled, types that derive `DocFor` will have their documentation comments inlined as associated constants
-- Calls to `doc_for!` will be replaced with the value of the associated constant
-
-### `doc_sub` & `DocSub`
-
-The `doc_for` crate also provides a `DocSub` trait and a `doc_sub!` macro:
-
-- The `DocSub` trait requires an associated function `doc_sub(&str) -> Option<&'static str>` to be implemented for the type
-- Calls to `doc_sub!` will call this function with the given sub-item name
-
-The `doc_sub_derive` crate provides a derive macro for the `DocSub` trait, which implements the `doc_sub` function for the type.
-
-Using these APIs is not quite zero-cost, as the `doc_sub` function is called at runtime. However, it only does a pattern match on the given sub-item name, so the performance impact should be negligible.
+- When compiled, types that derive `DocFor` will have their documentation comments inlined as associated constants or in constant functions
+- Calls to `doc_for!` will be replaced with the value of the associated constant or the result of the constant function
 
 ## ✅ TODO
 
@@ -177,9 +157,9 @@ Using these APIs is not quite zero-cost, as the `doc_sub` function is called at 
 - [ ] Access module documentation (e.g. `doc_for!(my_module)`)
 - [ ] Access trait documentation (e.g. `doc_for!(MyTrait)`)
 - [ ] Access sub-item documentation
-    - [x] Access field documentation (e.g. `doc_sub!(MyStruct, field)` or `doc_sub!(MyUnion, field)`)
-    - [x] Access enum variant documentation (e.g. `doc_sub!(MyEnum, Variant)`)
-    - [ ] Access enum variant instance documentation (e.g. `doc_sub!(my_enum_variant)`)
-    - [ ] Access method documentation (e.g. `doc_sub!(MyStruct, method)`)
-    - [ ] Access associated constant documentation (e.g. `doc_sub!(MyStruct, CONSTANT)`)
-    - [ ] Access associated type documentation (e.g. `doc_sub!(MyStruct, Type)`)
+    - [x] Access field documentation (e.g. `doc_for!(MyStruct, field)` or `doc_for!(MyUnion, field)`)
+    - [x] Access enum variant documentation (e.g. `doc_for!(MyEnum, Variant)`)
+    - [ ] Access enum variant instance documentation (e.g. `doc_for!(my_enum_variant)`)
+    - [ ] Access method documentation (e.g. `doc_for!(MyStruct, method)`)
+    - [ ] Access associated constant documentation (e.g. `doc_for!(MyStruct, CONSTANT)`)
+    - [ ] Access associated type documentation (e.g. `doc_for!(MyStruct, Type)`)
