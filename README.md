@@ -171,6 +171,69 @@ assert!(doc_for!(MyEnum, NotDocumented).is_none());
 // assert_eq!(doc_for!(MyEnum, NonExistent), None);
 ```
 
+### If you don't care about the `Option`
+
+The `doc!` macro is basically `doc_for!` with `unwrap`:
+
+```rust
+use doc_for::{DocFor, doc};
+
+#[derive(DocFor)]
+struct MyStruct {
+    /// Field documentation
+    field: i32,
+    not_documented: i32,
+}
+
+assert_eq!(doc!(MyStruct, field), " Field documentation");
+```
+
+...So it panics and fails the compilation if the requested type or field is not documented:
+
+```rust compile_fail
+# use doc_for::{DocFor, doc};
+#
+# #[derive(DocFor)]
+# struct MyStruct {
+#    /// Field documentation
+#    field: i32,
+#    not_documented: i32,
+# }
+#
+// Won't compile due to `The type is not documented`
+println!("{}", doc!(MyStruct));
+```
+
+```rust compile_fail
+# use doc_for::{DocFor, doc};
+#
+# #[derive(DocFor)]
+# struct MyStruct {
+#    /// Field documentation
+#    field: i32,
+#    not_documented: i32,
+# }
+#
+// Won't compile due to `The field is not documented`
+println!("{}", doc!(MyStruct, not_documented));
+```
+
+Of course, trying to access a non-existent field or variant will also fail the compilation:
+
+```rust compile_fail
+# use doc_for::{DocFor, doc};
+#
+# #[derive(DocFor)]
+# struct MyStruct {
+#    /// Field documentation
+#    field: i32,
+#    not_documented: i32,
+# }
+#
+// Won't compile due to `Field does not exist`
+println!("{}", doc!(MyStruct, non_existent));
+```
+
 ## ⚙️ Implementation
 
 The `doc_for` crate provides a `DocFor` trait and a `doc_for!` macro:

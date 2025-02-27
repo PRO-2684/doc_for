@@ -140,7 +140,7 @@ fn doc_for_sub_struct() {
 
     assert_eq!(doc_for!(MyStruct, field).unwrap(), " Field documentation");
     assert!(doc_for!(MyStruct, not_documented).is_none());
-    // assert_eq!(doc_for!(MyStruct, unknown_field), None);
+    // assert_eq!(doc_for!(MyStruct, unknown_field), None); // Won't compile
 }
 
 // #[test]
@@ -170,7 +170,7 @@ fn doc_for_sub_enum() {
 
     assert_eq!(doc_for!(MyEnum, Variant).unwrap(), " Variant documentation");
     assert!(doc_for!(MyEnum, NotDocumented).is_none());
-    // assert_eq!(doc_for!(MyEnum, UnknownVariant), None);
+    // assert_eq!(doc_for!(MyEnum, UnknownVariant), None); // Won't compile
 }
 
 #[test]
@@ -186,7 +186,7 @@ fn doc_for_sub_union() {
 
     assert_eq!(doc_for!(MyUnion, field).unwrap(), " Field documentation");
     assert!(doc_for!(MyUnion, not_documented).is_none());
-    // assert_eq!(doc_for!(MyUnion, unknown_field), None);
+    // assert_eq!(doc_for!(MyUnion, unknown_field), None); // Won't compile
 }
 
 #[test]
@@ -204,7 +204,7 @@ fn mixed_struct() {
     assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
     assert_eq!(doc_for!(MyStruct, field).unwrap(), " Field documentation");
     assert!(doc_for!(MyStruct, not_documented).is_none());
-    // assert_eq!(doc_for!(MyStruct, unknown_field), None);
+    // assert_eq!(doc_for!(MyStruct, unknown_field), None); // Won't compile
 }
 
 // #[test]
@@ -238,7 +238,7 @@ fn mixed_enum() {
     assert_eq!(doc_for!(MyEnum).unwrap(), " Some documentation");
     assert_eq!(doc_for!(MyEnum, Variant).unwrap(), " Variant documentation");
     assert!(doc_for!(MyEnum, NotDocumented).is_none());
-    // assert_eq!(doc_for!(MyEnum, UnknownVariant), None);
+    // assert_eq!(doc_for!(MyEnum, UnknownVariant), None); // Won't compile
 }
 
 #[test]
@@ -256,5 +256,19 @@ fn mixed_union() {
     assert_eq!(doc_for!(MyUnion).unwrap(), " Some documentation");
     assert_eq!(doc_for!(MyUnion, field).unwrap(), " Field documentation");
     assert!(doc_for!(MyUnion, not_documented).is_none());
-    // assert_eq!(doc_for!(MyUnion, unknown_field), None);
+    // assert_eq!(doc_for!(MyUnion, unknown_field), None); // Won't compile
+}
+
+#[test]
+fn doc_for_unwrap() {
+    use doc_for::doc;
+
+    /// Some documentation
+    #[derive(doc_for::DocFor)]
+    struct MyStruct {
+        field: i32,
+    }
+
+    assert_eq!(doc!(MyStruct), " Some documentation");
+    // println!("{}", doc!(MyStruct, field)); // Won't compile
 }

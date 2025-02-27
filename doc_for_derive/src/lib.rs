@@ -57,6 +57,9 @@ where
     }
 }
 
+/// Derive `DocFor`.
+///
+/// Derives the `DocFor` trait for a type, with additional `const fn doc_for_field` method. Primarily intended for use with the `doc_for!` macro, but you can also use the derived constant and method directly via `MyType::DOC` and `MyType::doc_for_field("field")`.
 #[proc_macro_derive(DocFor)]
 pub fn doc_for_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -64,21 +67,16 @@ pub fn doc_for_derive(input: TokenStream) -> TokenStream {
 
     // Get the documentation comment for the type.
     let doc_for_type = get_doc(input.attrs);
-    let doc_for_type_impl = match doc_for_type {
+    let doc_for_type_ret = match doc_for_type {
         Some(doc) => {
             let lit_doc = LitStr::new(&doc, Span::call_site());
-            quote! {
-                impl ::doc_for::DocFor for #name {
-                    const DOC: Option<&'static str> = Some(#lit_doc);
-                }
-            }
+            quote! { Some(#lit_doc) }
         }
-        None => {
-            quote! {
-                impl ::doc_for::DocFor for #name {
-                    const DOC: Option<&'static str> = None;
-                }
-            }
+        None => quote! { None },
+    };
+    let doc_for_type_impl = quote! {
+        impl ::doc_for::DocFor for #name {
+            const DOC: Option<&'static str> = #doc_for_type_ret;
         }
     };
 
@@ -101,14 +99,17 @@ pub fn doc_for_derive(input: TokenStream) -> TokenStream {
         ),
         Data::Enum(data) => generate_arms(data.variants.into_iter().map(|v| (v.ident, v.attrs))),
     };
-
-    let expanded = quote! {
-        #doc_for_type_impl
+    let doc_for_field_impl = quote! {
         impl #name {
             const fn doc_for_field(name: &'static str) -> Option<&'static str> {
                 #doc_for_field_body
             }
         }
+    };
+
+    let expanded = quote! {
+        #doc_for_type_impl
+        #doc_for_field_impl
     };
     expanded.into()
 }

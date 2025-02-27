@@ -10,18 +10,64 @@ pub trait DocFor {
     const DOC: Option<&'static str>;
 }
 
-/// Get the documentation comment for a type.
+/// Force compile-time evaluation. Used internally.
+#[doc(hidden)]
+#[macro_export]
+macro_rules! force_const {
+    ($t:ty, $e:expr) => {
+        {
+            const VALUE: $t = $e;
+            VALUE
+        }
+    };
+}
+
+/// Get the documentation comment for a type or its fields, returning `None` if not documented.
+///
+/// # Examples
+///
+/// ```rust
+/// use doc_for::{DocFor, doc_for};
+///
+/// /// Some documentation
+/// #[derive(DocFor)]
+/// struct MyStruct {
+///     /// Documentation for the field
+///     field: i32,
+///     not_documented: i32,
+/// }
+///
+/// assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
+/// assert_eq!(doc_for!(MyStruct, field).unwrap(), " Documentation for the field");
+/// assert!(doc_for!(MyStruct, not_documented).is_none());
+/// ```
+///
+/// Also works with enums and unions.
+///
+/// # Panics
+///
+/// Panics and fails the compilation if the type does not derive `DocFor`, or if the field does not exist.
 #[macro_export]
 macro_rules! doc_for {
     ($t:ty) => {
         <$t as $crate::DocFor>::DOC
     };
     ($t:ty, $field:ident) => {
-        // <$t>::doc_for_field(stringify!($field))
-        // Force compile-time evaluation
-        {
-            const DOC: Option<&'static str> = <$t>::doc_for_field(stringify!($field));
-            DOC
-        }
+        $crate::force_const!(Option<&'static str>, <$t>::doc_for_field(stringify!($field)))
+    };
+}
+
+/// Get the documentation comment for a type or its fields. Basically [`doc_for!`] with `unwrap`.
+///
+/// # Panics
+///
+/// Panics and fails the compilation if the type does not derive `DocFor`, the field does not exist, or not documented.
+#[macro_export]
+macro_rules! doc {
+    ($t:ty) => {
+        $crate::force_const!(&'static str, $crate::doc_for!($t).expect("The type is not documented"))
+    };
+    ($t:ty, $field:ident) => {
+        $crate::force_const!(&'static str, $crate::doc_for!($t, $field).expect("The field is not documented"))
     };
 }
