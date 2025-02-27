@@ -10,7 +10,19 @@ fn doc_for_struct() {
         field: i32,
     }
 
-    assert_eq!(doc_for!(MyStruct), " Some documentation");
+    assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
+}
+
+#[test]
+fn doc_for_empty() {
+    use doc_for::{doc_for, DocFor};
+
+    #[derive(DocFor)]
+    struct MyStruct {
+        field: i32,
+    }
+
+    assert!(doc_for!(MyStruct).is_none());
 }
 
 #[test]
@@ -23,7 +35,7 @@ fn doc_for_renamed() {
         field: i32,
     }
 
-    assert_eq!(doc_for!(MyStruct), " Some documentation");
+    assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
 }
 
 #[test]
@@ -40,7 +52,7 @@ fn doc_for_override_trait() {
         field: i32,
     }
 
-    assert_eq!(doc_for!(MyStruct), " Some documentation");
+    assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
 }
 
 #[test]
@@ -57,11 +69,11 @@ fn doc_for_override_const() {
         const DOC: &'static str = " Some other documentation";
     }
 
-    assert_eq!(doc_for!(MyStruct), " Some documentation");
+    assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
 }
 
 #[test]
-fn doc_for_sub() {
+fn doc_for_submod() {
     use doc_for::doc_for;
 
     mod sub {
@@ -74,7 +86,7 @@ fn doc_for_sub() {
         }
     }
 
-    assert_eq!(doc_for!(sub::MyStruct), " Some documentation");
+    assert_eq!(doc_for!(sub::MyStruct).unwrap(), " Some documentation");
 }
 
 #[test]
@@ -85,7 +97,7 @@ fn doc_for_tuple_struct() {
     #[derive(DocFor)]
     struct MyStruct(i32);
 
-    assert_eq!(doc_for!(MyStruct), " Some documentation");
+    assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
 }
 
 #[test]
@@ -99,7 +111,7 @@ fn doc_for_enum() {
         Variant,
     }
 
-    assert_eq!(doc_for!(MyEnum), " Some documentation");
+    assert_eq!(doc_for!(MyEnum).unwrap(), " Some documentation");
 }
 
 #[test]
@@ -112,7 +124,7 @@ fn doc_for_union() {
         field: i32,
     }
 
-    assert_eq!(doc_for!(MyUnion), " Some documentation");
+    assert_eq!(doc_for!(MyUnion).unwrap(), " Some documentation");
 }
 
 #[test]
@@ -127,8 +139,8 @@ fn doc_for_sub_struct() {
     }
 
     assert_eq!(doc_for!(MyStruct, field).unwrap(), " Field documentation");
-    assert_eq!(doc_for!(MyStruct, not_documented).unwrap(), "");
-    assert_eq!(doc_for!(MyStruct, unknown_field), None);
+    assert!(doc_for!(MyStruct, not_documented).is_none());
+    // assert_eq!(doc_for!(MyStruct, unknown_field), None);
 }
 
 // #[test]
@@ -157,8 +169,8 @@ fn doc_for_sub_enum() {
     }
 
     assert_eq!(doc_for!(MyEnum, Variant).unwrap(), " Variant documentation");
-    assert_eq!(doc_for!(MyEnum, NotDocumented).unwrap(), "");
-    assert_eq!(doc_for!(MyEnum, UnknownVariant), None);
+    assert!(doc_for!(MyEnum, NotDocumented).is_none());
+    // assert_eq!(doc_for!(MyEnum, UnknownVariant), None);
 }
 
 #[test]
@@ -173,8 +185,8 @@ fn doc_for_sub_union() {
     }
 
     assert_eq!(doc_for!(MyUnion, field).unwrap(), " Field documentation");
-    assert_eq!(doc_for!(MyUnion, not_documented).unwrap(), "");
-    assert_eq!(doc_for!(MyUnion, unknown_field), None);
+    assert!(doc_for!(MyUnion, not_documented).is_none());
+    // assert_eq!(doc_for!(MyUnion, unknown_field), None);
 }
 
 #[test]
@@ -189,10 +201,10 @@ fn mixed_struct() {
         not_documented: i32,
     }
 
-    assert_eq!(doc_for!(MyStruct), " Some documentation");
+    assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
     assert_eq!(doc_for!(MyStruct, field).unwrap(), " Field documentation");
-    assert_eq!(doc_for!(MyStruct, not_documented).unwrap(), "");
-    assert_eq!(doc_for!(MyStruct, unknown_field), None);
+    assert!(doc_for!(MyStruct, not_documented).is_none());
+    // assert_eq!(doc_for!(MyStruct, unknown_field), None);
 }
 
 // #[test]
@@ -206,7 +218,7 @@ fn mixed_struct() {
 //         i32
 //     );
 
-//     assert_eq!(doc_for!(MyStruct), " Some documentation");
+//     assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
 //     assert_eq!(doc_for!(MyStruct, 0).unwrap(), "");
 //     assert_eq!(doc_for!(MyStruct, 1), None);
 // }
@@ -223,10 +235,10 @@ fn mixed_enum() {
         NotDocumented,
     }
 
-    assert_eq!(doc_for!(MyEnum), " Some documentation");
+    assert_eq!(doc_for!(MyEnum).unwrap(), " Some documentation");
     assert_eq!(doc_for!(MyEnum, Variant).unwrap(), " Variant documentation");
-    assert_eq!(doc_for!(MyEnum, NotDocumented).unwrap(), "");
-    assert_eq!(doc_for!(MyEnum, UnknownVariant), None);
+    assert!(doc_for!(MyEnum, NotDocumented).is_none());
+    // assert_eq!(doc_for!(MyEnum, UnknownVariant), None);
 }
 
 #[test]
@@ -241,8 +253,8 @@ fn mixed_union() {
         not_documented: i32,
     }
 
-    assert_eq!(doc_for!(MyUnion), " Some documentation");
+    assert_eq!(doc_for!(MyUnion).unwrap(), " Some documentation");
     assert_eq!(doc_for!(MyUnion, field).unwrap(), " Field documentation");
-    assert_eq!(doc_for!(MyUnion, not_documented).unwrap(), "");
-    assert_eq!(doc_for!(MyUnion, unknown_field), None);
+    assert!(doc_for!(MyUnion, not_documented).is_none());
+    // assert_eq!(doc_for!(MyUnion, unknown_field), None);
 }

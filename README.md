@@ -34,7 +34,7 @@ struct MyStruct {
 }
 ```
 
-Finally, use the `doc_for!` macro to get the documentation comment:
+Finally, use the `doc_for!` macro to get the documentation comment, which returns an `Option<&'static str>`:
 
 ```rust
 # use doc_for::{DocFor, doc_for};
@@ -44,7 +44,7 @@ Finally, use the `doc_for!` macro to get the documentation comment:
 # struct MyStruct {
 #     field: i32,
 # }
-assert_eq!(doc_for!(MyStruct), " Some documentation");
+assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
 ```
 
 Note that the leading spaces are preserved. Multi-line comments are also supported:
@@ -60,10 +60,23 @@ Note that the leading spaces are preserved. Multi-line comments are also support
 struct MyStruct {
     field: i32,
 }
-assert_eq!(doc_for!(MyStruct), r#" Some documentation
+assert_eq!(doc_for!(MyStruct).unwrap(), r#" Some documentation
  that spans multiple lines
 
  Additional information"#);
+```
+
+If the type does not have a documentation comment, `doc_for!` will return `None`:
+
+```rust
+# use doc_for::{DocFor, doc_for};
+#
+// No documentation comment here
+#[derive(DocFor)]
+struct MyStruct {
+    field: i32,
+}
+assert!(doc_for!(MyStruct).is_none());
 ```
 
 Also works with tuple structs, enums and unions:
@@ -74,21 +87,21 @@ Also works with tuple structs, enums and unions:
 /// Tuple struct documentation
 #[derive(DocFor)]
 struct MyTupleStruct(i32);
-assert_eq!(doc_for!(MyTupleStruct), " Tuple struct documentation");
+assert_eq!(doc_for!(MyTupleStruct).unwrap(), " Tuple struct documentation");
 
 /// Enum documentation
 #[derive(DocFor)]
 enum MyEnum {
     Variant,
 }
-assert_eq!(doc_for!(MyEnum), " Enum documentation");
+assert_eq!(doc_for!(MyEnum).unwrap(), " Enum documentation");
 
 /// Union documentation
 #[derive(DocFor)]
 union MyUnion {
     field: i32,
 }
-assert_eq!(doc_for!(MyUnion), " Union documentation");
+assert_eq!(doc_for!(MyUnion).unwrap(), " Union documentation");
 ```
 
 ### Get the documentation comment for fields and variants
@@ -106,7 +119,7 @@ struct MyStruct {
 }
 ```
 
-Finally, use the `doc_for!` macro to get the documentation comment. If the field does not have a documentation comment, `doc_for!` will return `Some("")`; If the field does not exist, `doc_for!` will return `None`.
+Finally, use the `doc_for!` macro to get the documentation comment. If the field does not have a documentation comment, `doc_for!` will return `None`:
 
 ```rust
 # use doc_for::{DocFor, doc_for};
@@ -118,7 +131,23 @@ Finally, use the `doc_for!` macro to get the documentation comment. If the field
 #     not_documented: i32,
 # }
 assert_eq!(doc_for!(MyStruct, field).unwrap(), " Field documentation");
-assert_eq!(doc_for!(MyStruct, not_documented).unwrap(), "");
+assert!(doc_for!(MyStruct, not_documented).is_none());
+// Won't compile because the field does not exist
+// assert_eq!(doc_for!(MyStruct, non_existent), None);
+```
+
+If the field does not exist, `doc_for!` will panic, thus failing the compilation:
+
+```rust compile_fail
+# use doc_for::{DocFor, doc_for};
+#
+# #[derive(DocFor)]
+# struct MyStruct {
+#     /// Field documentation
+#     field: i32,
+#     not_documented: i32,
+# }
+// Won't compile due to `Field does not exist`
 assert_eq!(doc_for!(MyStruct, non_existent), None);
 ```
 
@@ -134,8 +163,9 @@ enum MyEnum {
     NotDocumented,
 }
 assert_eq!(doc_for!(MyEnum, Variant).unwrap(), " Variant documentation");
-assert_eq!(doc_for!(MyEnum, NotDocumented).unwrap(), "");
-assert_eq!(doc_for!(MyEnum, NonExistent), None);
+assert!(doc_for!(MyEnum, NotDocumented).is_none());
+// Won't compile because the variant does not exist
+// assert_eq!(doc_for!(MyEnum, NonExistent), None);
 ```
 
 ## ⚙️ Implementation
