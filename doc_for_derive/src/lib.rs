@@ -2,12 +2,15 @@
 #![deny(missing_docs)]
 #![warn(clippy::all, clippy::nursery, clippy::pedantic, clippy::cargo)]
 
+mod attrs;
+
+use attrs::Attrs;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
 use syn::{
-    parse_macro_input, Attribute, Data, DeriveInput, Expr, ExprLit, ExprPath, Fields, Ident, Lit,
-    LitByteStr, LitInt, LitStr, Meta, MetaNameValue,
+    parse_macro_input, Attribute, Data, DeriveInput, Expr, Fields, Ident, Lit,
+    LitByteStr, LitInt, LitStr, Meta,
 };
 
 // Helper functions
@@ -118,43 +121,6 @@ where
     }
 }
 
-/// Parses the `strip` attribute, mapping `all` to `None` and `n` to `Some(n)`. Defaults to `Some(0)`.
-fn parse_strip_attr(attr: TokenStream) -> Option<usize> {
-    // Example input: `strip = 2`, `strip = all`, `` (empty)
-    if attr.is_empty() {
-        return Some(0);
-    }
-    // Parse named attribute into MetaNameValue
-    let mnv: MetaNameValue = syn::parse(attr).unwrap_or_else(|err| {
-        panic!("Failed to parse attribute: {err}");
-    });
-    let (name, value) = (
-        mnv.path.get_ident().expect("Expected an identifier"),
-        mnv.value,
-    );
-    // Check if the attribute is named `strip`
-    if name != "strip" {
-        panic!("Expected attribute to be named `strip`");
-    }
-    // Check if the value is a string literal or an integer literal
-    match value {
-        Expr::Path(ExprPath { path, .. }) => {
-            if path.is_ident("all") {
-                None
-            } else {
-                panic!("Expected `all` or integer literal");
-            }
-        }
-        Expr::Lit(ExprLit {
-            lit: Lit::Int(lit_int),
-            ..
-        }) => {
-            let n: usize = lit_int.base10_parse().expect("Invalid integer literal");
-            Some(n)
-        }
-        _ => panic!("Expected `all` or integer literal"),
-    }
-}
 
 // Actual macro implementations
 
@@ -284,12 +250,27 @@ pub fn doc_dyn_derive(input: TokenStream) -> TokenStream {
 /// # Parameters
 ///
 /// - `strip`: The number of leading whitespace characters to strip from the documentation comments. If `all`, all will be stripped; if `n`, `n` whitespace characters will be stripped, if present. Default is `0`.
+/// - `doc_for`: Whether to generate implementation for `DocFor` and `doc_for_field`. Default is `true`.
+/// - `doc_dyn`: Whether to generate implementation for `DocDyn` for an enum. Default is `false`.
 #[proc_macro_attribute]
-pub fn doc_impl(attr: TokenStream, input: TokenStream) -> TokenStream {
-    let mut output = input.clone();
-    let generated = gen_doc_for_impl(input, parse_strip_attr(attr));
-    output.extend(generated);
-    output
+pub fn doc_impl(attrs: TokenStream, mut input: TokenStream) -> TokenStream {
+    let attrs: Attrs = match syn::parse(attrs) {
+        Ok(attrs) => attrs,
+        Err(err) => return syn::Error::into_compile_error(err).into(),
+    };
+    let mut generated = TokenStream::new();
+
+    if attrs.doc_for {
+        let doc_for_impl = gen_doc_for_impl(input.clone(), attrs.strip);
+        generated.extend(doc_for_impl);
+    }
+    if attrs.doc_dyn {
+        let doc_dyn_impl = gen_doc_dyn_impl(input.clone(), attrs.strip);
+        generated.extend(doc_dyn_impl);
+    }
+
+    input.extend(generated);
+    input
 }
 
 // /// Derives the `DocDyn` trait for an enum type, providing `doc_dyn` method.

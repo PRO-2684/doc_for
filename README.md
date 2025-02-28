@@ -180,6 +180,28 @@ assert!(doc_for!(MyTupleStruct, 1).is_none());
 // assert_eq!(doc_for!(MyTupleStruct, 2), None);
 ```
 
+### Stripping the documentation comment
+
+The `strip` attribute can be used to strip leading whitespace characters of the documentation comment. If `all`, all will be stripped; if `n`, `n` whitespace characters will be stripped, if present. Default is `0`.
+
+```rust
+use doc_for::{doc_for, doc_impl};
+
+/// Some documentation
+#[doc_impl(strip = 1)]
+struct MyStruct {
+    field: i32,
+}
+assert_eq!(doc_for!(MyStruct).unwrap(), "Some documentation");
+
+///          Too many spaces
+#[doc_impl(strip = all)]
+struct TooManySpaces {
+    field: i32,
+}
+assert_eq!(doc_for!(TooManySpaces).unwrap(), "Too many spaces");
+```
+
 ### If you don't care about the `Option`
 
 The `doc!` macro is basically `doc_for!` with `unwrap`:
@@ -245,18 +267,18 @@ println!("{}", doc!(MyStruct, non_existent));
 
 ### Get the documentation comment for an enum variant
 
-This time, bring `DocDyn` into scope:
+This time, bring `DocDyn` and `doc_impl` into scope:
 
 ```rust
-use doc_for::DocDyn;
+use doc_for::{DocDyn, doc_impl};
 ```
 
-Then, derive the `DocDyn` trait for your enum:
+Then, annotate your enum with `#[doc_impl(doc_for = false, doc_dyn = true)]`:
 
 ```rust
-# use doc_for::DocDyn;
+# use doc_for::{DocDyn, doc_impl};
 #
-#[derive(DocDyn)]
+#[doc_impl(doc_for = false, doc_dyn = true)]
 enum MyEnum {
     /// Variant documentation
     Variant,
@@ -267,9 +289,9 @@ enum MyEnum {
 Finally, call the `doc_dyn` method on the enum variant:
 
 ```rust
-# use doc_for::DocDyn;
+# use doc_for::{DocDyn, doc_impl};
 #
-# #[derive(DocDyn)]
+# #[doc_impl(doc_for = false, doc_dyn = true)]
 # enum MyEnum {
 #     /// Variant documentation
 #     Variant,
@@ -281,7 +303,43 @@ assert!(MyEnum::NotDocumented.doc_dyn().is_none());
 
 Note that this method is not zero-cost, as it matches the enum variant at runtime.
 
+To use both `doc_for!` and `doc_dyn` on the same enum, annotate it with `#[doc_impl(doc_dyn = true)]`. You can include `doc_for = true` if you want, but since it's the default, it's not necessary.
+
+```rust
+# use doc_for::{DocDyn, doc_for, doc_impl};
+#
+#[doc_impl(doc_dyn = true, strip = 1)]
+enum MyEnum {
+    /// Variant documentation
+    Variant,
+    NotDocumented,
+}
+
+assert_eq!(doc_for!(MyEnum, Variant).unwrap(), "Variant documentation");
+assert_eq!(MyEnum::Variant.doc_dyn().unwrap(), "Variant documentation");
+```
+
 ### The `derive` alternative
+
+If you prefer to use `derive`, you can use `DocFor` and `DocDyn` to replace `doc_for` and `doc_dyn` fields in the `doc_impl` attribute:
+
+```rust
+use doc_for::{DocDyn, DocFor, doc_for};
+
+#[derive(DocFor, DocDyn)]
+/// Some documentation
+enum MyEnum {
+    /// Variant documentation
+    Variant,
+    NotDocumented,
+}
+
+assert_eq!(doc_for!(MyEnum).unwrap(), " Some documentation");
+assert_eq!(doc_for!(MyEnum, Variant).unwrap(), " Variant documentation");
+assert_eq!(MyEnum::Variant.doc_dyn().unwrap(), " Variant documentation");
+```
+
+However, you won't be able to configure the `strip` attribute in this case.
 
 ## ⚙️ Implementation
 
