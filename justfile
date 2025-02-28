@@ -1,19 +1,31 @@
-alias p := publish
+alias f := format
 alias t := test
+alias c := clean
+alias p := publish
 alias v := version
 
 default:
   just --list
 
-# Publish
-[doc("\u{001b}[4mP\u{001b}[24mublish")]
-publish:
-    cd doc_for_derive && cargo publish && cd .. && cargo publish
+# Format
+[doc("\u{001b}[4mF\u{001b}[24mormat")]
+format:
+    cd doc_for_derive && cargo fmt && cd .. && cargo fmt
 
 # Run tests
 [doc("Run \u{001b}[4mt\u{001b}[24mests")]
 test *args:
     cargo test {{args}}
+
+# Clean
+[doc("\u{001b}[4mC\u{001b}[24mlean")]
+clean:
+    cd doc_for_derive && cargo clean && cd .. && cargo clean
+
+# Publish
+[doc("\u{001b}[4mP\u{001b}[24mublish")]
+publish:
+    cd doc_for_derive && cargo publish && cd .. && cargo publish
 
 # Set or get version
 [doc("Set or get \u{001b}[4mv\u{001b}[24mersion")]

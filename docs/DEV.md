@@ -1,5 +1,23 @@
 # Dev Notes
 
+## Formatting
+
+```sh
+just f
+```
+
+## Testing
+
+```sh
+just t
+```
+
+## Clean
+
+```sh
+just c
+```
+
 ## Version Management
 
 To get the current version of the package:

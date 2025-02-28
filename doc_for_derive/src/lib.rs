@@ -9,8 +9,8 @@ use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
 use syn::{
-    parse_macro_input, Attribute, Data, DeriveInput, Expr, Fields, Ident, Lit,
-    LitByteStr, LitInt, LitStr, Meta,
+    parse_macro_input, Attribute, Data, DeriveInput, Expr, Fields, Ident, Lit, LitByteStr, LitInt,
+    LitStr, Meta,
 };
 
 // Helper functions
@@ -34,14 +34,17 @@ fn get_doc(attrs: Vec<syn::Attribute>, strip: Option<usize>) -> Option<String> {
             let line = lit_str.value();
             if let Some(mut n) = strip {
                 // Strip at most `n` leading whitespaces
-                Some(line.trim_start_matches(|c: char| -> bool {
-                    if n > 0 && c.is_whitespace() {
-                        n -= 1;
-                        true
-                    } else {
-                        false
-                    }
-                }).to_string())
+                Some(
+                    line.trim_start_matches(|c: char| -> bool {
+                        if n > 0 && c.is_whitespace() {
+                            n -= 1;
+                            true
+                        } else {
+                            false
+                        }
+                    })
+                    .to_string(),
+                )
             } else {
                 // Strip all leading whitespaces
                 Some(line.trim_start().to_string())
@@ -120,7 +123,6 @@ where
         }
     }
 }
-
 
 // Actual macro implementations
 

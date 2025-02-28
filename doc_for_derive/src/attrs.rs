@@ -1,8 +1,8 @@
 //! Parsing attributes for `doc_impl` attribute macro.
 
-use syn::spanned::Spanned;
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
+use syn::spanned::Spanned;
 use syn::{Error, Expr, ExprLit, ExprPath, Lit, MetaNameValue, Token};
 
 // Helper functions
@@ -10,9 +10,7 @@ use syn::{Error, Expr, ExprLit, ExprPath, Lit, MetaNameValue, Token};
 /// Parses `Option<usize>` from `Expr`, mapping `all` to `None` and `n` to `Some(n)`.
 fn parse_option_usize(expr: Expr) -> Result<Option<usize>> {
     match expr {
-        Expr::Path(ExprPath { path, .. }) if path.is_ident("all") => {
-            Ok(None)
-        }
+        Expr::Path(ExprPath { path, .. }) if path.is_ident("all") => Ok(None),
         Expr::Lit(ExprLit {
             lit: Lit::Int(lit_int),
             ..
@@ -51,7 +49,11 @@ pub struct Attrs {
 
 impl Default for Attrs {
     fn default() -> Self {
-        Self { strip: Some(0), doc_for: true, doc_dyn: false }
+        Self {
+            strip: Some(0),
+            doc_for: true,
+            doc_dyn: false,
+        }
     }
 }
 
@@ -62,7 +64,9 @@ impl Parse for Attrs {
 
         for mnv in parsed {
             let (name, value) = (
-                mnv.path.get_ident().ok_or(Error::new(mnv.span(), "Expected an identifier"))?,
+                mnv.path
+                    .get_ident()
+                    .ok_or(Error::new(mnv.span(), "Expected an identifier"))?,
                 mnv.value,
             );
             match name.to_string().as_str() {
@@ -82,4 +86,3 @@ impl Parse for Attrs {
         Ok(attrs)
     }
 }
-
