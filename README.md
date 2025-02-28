@@ -368,6 +368,10 @@ The `doc_for` crate also provides a `DocDyn` trait and a `doc_dyn` method:
 
 This method is not zero-cost, as it matches the enum variant at runtime.
 
+### `doc_impl`
+
+The `doc_impl` attribute is used to derive the `DocFor` and `DocDyn` traits for a type, along with configuring the `strip` attribute.
+
 ## ✅ TODO
 
 - [ ] Strip each line of the documentation comment, via a `strip` attribute

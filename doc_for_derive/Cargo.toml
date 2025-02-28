@@ -1,6 +1,6 @@
 [package]
 name = "doc_for_derive"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 include = ["/src", "README.md"]
 repository = "https://github.com/PRO-2684/doc_for"
