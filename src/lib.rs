@@ -2,7 +2,7 @@
 #![deny(missing_docs)]
 #![warn(clippy::all, clippy::nursery, clippy::pedantic, clippy::cargo)]
 
-pub use doc_for_derive::{DocDyn, DocFor};
+pub use doc_for_derive::{DocDyn, DocFor, doc_impl};
 
 /// Trait for types that allows getting the documentation comment for the type.
 pub trait DocFor {

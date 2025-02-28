@@ -13,25 +13,25 @@
 ## 🪄 Features
 
 - **Zero-cost**: All work is done at compile-time
-- **Simple**: Just derive the `DocFor` trait and use the `doc_for!` macro
+- **Simple**: Just annotate your struct with `#[doc_impl]` and use the `doc_for!` macro
 
 ## 🤔 Usage
 
 ### Get the documentation comment for a type
 
-First, bring `DocFor` and `doc_for!` into scope:
+First, bring `doc_for` and `doc_impl` into scope:
 
 ```rust
-use doc_for::{DocFor, doc_for};
+use doc_for::{doc_for, doc_impl};
 ```
 
-Then, derive the `DocFor` trait for your struct:
+Then, annotate your struct with `#[doc_impl]`:
 
 ```rust
-# use doc_for::{DocFor, doc_for};
+# use doc_for::{doc_for, doc_impl};
 #
 /// Some documentation
-#[derive(DocFor)]
+#[doc_impl]
 struct MyStruct {
     field: i32,
 }
@@ -40,10 +40,10 @@ struct MyStruct {
 Finally, use the `doc_for!` macro to get the documentation comment, which returns an `Option<&'static str>`:
 
 ```rust
-# use doc_for::{DocFor, doc_for};
+# use doc_for::{doc_for, doc_impl};
 #
 # /// Some documentation
-# #[derive(DocFor)]
+# #[doc_impl]
 # struct MyStruct {
 #     field: i32,
 # }
@@ -53,13 +53,13 @@ assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
 Note that the leading spaces are preserved. Multi-line comments are also supported:
 
 ```rust
-# use doc_for::{DocFor, doc_for};
+# use doc_for::{doc_for, doc_impl};
 #
 /// Some documentation
 /// that spans multiple lines
 ///
 /// Additional information
-#[derive(DocFor)]
+#[doc_impl]
 struct MyStruct {
     field: i32,
 }
@@ -72,10 +72,10 @@ assert_eq!(doc_for!(MyStruct).unwrap(), r#" Some documentation
 If the type does not have a documentation comment, `doc_for!` will return `None`:
 
 ```rust
-# use doc_for::{DocFor, doc_for};
+# use doc_for::{doc_for, doc_impl};
 #
 // No documentation comment here
-#[derive(DocFor)]
+#[doc_impl]
 struct MyStruct {
     field: i32,
 }
@@ -85,22 +85,22 @@ assert!(doc_for!(MyStruct).is_none());
 Also works with tuple structs, enums and unions:
 
 ```rust
-# use doc_for::{DocFor, doc_for};
+# use doc_for::{doc_for, doc_impl};
 #
 /// Tuple struct documentation
-#[derive(DocFor)]
+#[doc_impl]
 struct MyTupleStruct(i32);
 assert_eq!(doc_for!(MyTupleStruct).unwrap(), " Tuple struct documentation");
 
 /// Enum documentation
-#[derive(DocFor)]
+#[doc_impl]
 enum MyEnum {
     Variant,
 }
 assert_eq!(doc_for!(MyEnum).unwrap(), " Enum documentation");
 
 /// Union documentation
-#[derive(DocFor)]
+#[doc_impl]
 union MyUnion {
     field: i32,
 }
@@ -109,12 +109,12 @@ assert_eq!(doc_for!(MyUnion).unwrap(), " Union documentation");
 
 ### Get the documentation comment for fields and variants
 
-Same as before, bring `DocFor` and `doc_for!` into scope and derive the `DocFor` trait for your struct:
+Same as before, bring `doc_impl` and `doc_for!` into scope and annotate your struct with `#[doc_impl]`:
 
 ```rust
-use doc_for::{DocFor, doc_for};
+use doc_for::{doc_for, doc_impl};
 
-#[derive(DocFor)]
+#[doc_impl]
 struct MyStruct {
     /// Field documentation
     field: i32,
@@ -125,9 +125,9 @@ struct MyStruct {
 Then, use the `doc_for!` macro to get the documentation comment. If the field does not have a documentation comment, `doc_for!` will return `None`:
 
 ```rust
-# use doc_for::{DocFor, doc_for};
+# use doc_for::{doc_for, doc_impl};
 #
-# #[derive(DocFor)]
+# #[doc_impl]
 # struct MyStruct {
 #     /// Field documentation
 #     field: i32,
@@ -135,16 +135,14 @@ Then, use the `doc_for!` macro to get the documentation comment. If the field do
 # }
 assert_eq!(doc_for!(MyStruct, field).unwrap(), " Field documentation");
 assert!(doc_for!(MyStruct, not_documented).is_none());
-// Won't compile due to `Field or variant does not exist`
-// assert_eq!(doc_for!(MyStruct, non_existent), None);
 ```
 
 If the field or variant does not exist, `doc_for!` will panic, thus failing the compilation:
 
 ```rust compile_fail
-# use doc_for::{DocFor, doc_for};
+# use doc_for::{doc_for, doc_impl};
 #
-# #[derive(DocFor)]
+# #[doc_impl]
 # struct MyStruct {
 #     /// Field documentation
 #     field: i32,
@@ -157,9 +155,9 @@ assert_eq!(doc_for!(MyStruct, non_existent), None);
 Similarly, it also works with union fields (not listed here), enum variants and tuple struct fields:
 
 ```rust
-# use doc_for::{DocFor, doc_for};
+# use doc_for::{doc_for, doc_impl};
 #
-#[derive(DocFor)]
+#[doc_impl]
 enum MyEnum {
     /// Variant documentation
     Variant,
@@ -170,7 +168,7 @@ assert!(doc_for!(MyEnum, NotDocumented).is_none());
 // Won't compile due to `Field or variant does not exist`
 // assert_eq!(doc_for!(MyEnum, NonExistent), None);
 
-#[derive(DocFor)]
+#[doc_impl]
 struct MyTupleStruct(
     /// Tuple struct field documentation
     i32,
@@ -187,9 +185,9 @@ assert!(doc_for!(MyTupleStruct, 1).is_none());
 The `doc!` macro is basically `doc_for!` with `unwrap`:
 
 ```rust
-use doc_for::{DocFor, doc};
+use doc_for::{doc, doc_impl};
 
-#[derive(DocFor)]
+#[doc_impl]
 struct MyStruct {
     /// Field documentation
     field: i32,
@@ -202,9 +200,9 @@ assert_eq!(doc!(MyStruct, field), " Field documentation");
 ...So it panics and fails the compilation if the requested type or field is not documented:
 
 ```rust compile_fail
-# use doc_for::{DocFor, doc};
+# use doc_for::{doc, doc_impl};
 #
-# #[derive(DocFor)]
+# #[doc_impl]
 # struct MyStruct {
 #    /// Field documentation
 #    field: i32,
@@ -216,9 +214,9 @@ println!("{}", doc!(MyStruct));
 ```
 
 ```rust compile_fail
-# use doc_for::{DocFor, doc};
+# use doc_for::{doc, doc_impl};
 #
-# #[derive(DocFor)]
+# #[doc_impl]
 # struct MyStruct {
 #    /// Field documentation
 #    field: i32,
@@ -232,9 +230,9 @@ println!("{}", doc!(MyStruct, not_documented));
 Of course, trying to access a non-existent field or variant will also fail the compilation:
 
 ```rust compile_fail
-# use doc_for::{DocFor, doc};
+# use doc_for::{doc, doc_impl};
 #
-# #[derive(DocFor)]
+# #[doc_impl]
 # struct MyStruct {
 #    /// Field documentation
 #    field: i32,
@@ -283,6 +281,8 @@ assert!(MyEnum::NotDocumented.doc_dyn().is_none());
 
 Note that this method is not zero-cost, as it matches the enum variant at runtime.
 
+### The `derive` alternative
+
 ## ⚙️ Implementation
 
 ### `DocFor` and `doc_for!`
@@ -313,6 +313,7 @@ This method is not zero-cost, as it matches the enum variant at runtime.
 ## ✅ TODO
 
 - [ ] Strip each line of the documentation comment, via a `strip` attribute
+- [ ] Better error reporting and handling
 - [ ] Access module documentation (e.g. `doc_for!(my_module)`)
 - [ ] Access trait documentation (e.g. `doc_for!(MyTrait)`)
 - [ ] Access sub-item documentation

@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 #[test]
-fn doc_for_struct() {
+fn derive_doc_for_struct() {
     use doc_for::{doc_for, DocFor};
 
     /// Some documentation
@@ -14,7 +14,7 @@ fn doc_for_struct() {
 }
 
 #[test]
-fn doc_for_empty() {
+fn derive_doc_for_empty() {
     use doc_for::{doc_for, DocFor};
 
     #[derive(DocFor)]
@@ -26,7 +26,7 @@ fn doc_for_empty() {
 }
 
 #[test]
-fn doc_for_renamed() {
+fn derive_doc_for_renamed() {
     use doc_for::{doc_for, DocFor as RenamedDocFor};
 
     /// Some documentation
@@ -39,7 +39,7 @@ fn doc_for_renamed() {
 }
 
 #[test]
-fn doc_for_override_trait() {
+fn derive_doc_for_override_trait() {
     use doc_for::{doc_for, DocFor as RenamedDocFor};
 
     trait DocFor {
@@ -56,7 +56,7 @@ fn doc_for_override_trait() {
 }
 
 #[test]
-fn doc_for_override_const() {
+fn derive_doc_for_override_const() {
     use doc_for::{doc_for, DocFor as RenamedDocFor};
 
     /// Some documentation
@@ -73,7 +73,7 @@ fn doc_for_override_const() {
 }
 
 #[test]
-fn doc_for_submod() {
+fn derive_doc_for_submod() {
     use doc_for::doc_for;
 
     mod sub {
@@ -90,7 +90,7 @@ fn doc_for_submod() {
 }
 
 #[test]
-fn doc_for_tuple_struct() {
+fn derive_doc_for_tuple_struct() {
     use doc_for::{doc_for, DocFor};
 
     /// Some documentation
@@ -101,7 +101,7 @@ fn doc_for_tuple_struct() {
 }
 
 #[test]
-fn doc_for_enum() {
+fn derive_doc_for_enum() {
     use doc_for::{doc_for, DocFor};
 
     /// Some documentation
@@ -115,7 +115,7 @@ fn doc_for_enum() {
 }
 
 #[test]
-fn doc_for_union() {
+fn derive_doc_for_union() {
     use doc_for::{doc_for, DocFor};
 
     /// Some documentation
@@ -128,7 +128,7 @@ fn doc_for_union() {
 }
 
 #[test]
-fn doc_for_sub_struct() {
+fn derive_doc_for_sub_struct() {
     use doc_for::{doc_for, DocFor};
 
     #[derive(DocFor)]
@@ -144,7 +144,7 @@ fn doc_for_sub_struct() {
 }
 
 #[test]
-fn doc_for_sub_tuple_struct() {
+fn derive_doc_for_sub_tuple_struct() {
     use doc_for::{doc_for, DocFor};
 
     #[derive(DocFor)]
@@ -158,7 +158,7 @@ fn doc_for_sub_tuple_struct() {
 }
 
 #[test]
-fn doc_for_sub_enum() {
+fn derive_doc_for_sub_enum() {
     use doc_for::{doc_for, DocFor};
 
     #[derive(DocFor)]
@@ -174,7 +174,7 @@ fn doc_for_sub_enum() {
 }
 
 #[test]
-fn doc_for_sub_union() {
+fn derive_doc_for_sub_union() {
     use doc_for::{doc_for, DocFor};
 
     #[derive(DocFor)]
@@ -190,7 +190,7 @@ fn doc_for_sub_union() {
 }
 
 #[test]
-fn mixed_struct() {
+fn derive_mixed_struct() {
     use doc_for::{doc_for, DocFor};
 
     /// Some documentation
@@ -208,7 +208,7 @@ fn mixed_struct() {
 }
 
 #[test]
-fn mixed_tuple_struct() {
+fn derive_mixed_tuple_struct() {
     use doc_for::{doc_for, DocFor};
 
     /// Some documentation
@@ -224,7 +224,7 @@ fn mixed_tuple_struct() {
 }
 
 #[test]
-fn mixed_enum() {
+fn derive_mixed_enum() {
     use doc_for::{doc_for, DocFor};
 
     /// Some documentation
@@ -242,7 +242,7 @@ fn mixed_enum() {
 }
 
 #[test]
-fn mixed_union() {
+fn derive_mixed_union() {
     use doc_for::{doc_for, DocFor};
 
     /// Some documentation
@@ -260,7 +260,7 @@ fn mixed_union() {
 }
 
 #[test]
-fn doc_for_unwrap() {
+fn derive_doc_for_unwrap() {
     use doc_for::doc;
 
     /// Some documentation
@@ -274,7 +274,7 @@ fn doc_for_unwrap() {
 }
 
 #[test]
-fn doc_dyn() {
+fn derive_doc_dyn() {
     use doc_for::DocDyn;
 
     /// Some documentation
@@ -290,4 +290,17 @@ fn doc_dyn() {
         " Variant documentation"
     );
     assert!(MyEnum::Variant2.doc_dyn().is_none());
+}
+
+#[test]
+fn attr_doc_for_default() {
+    use doc_for::{doc_for, doc_impl};
+
+    /// Some documentation
+    #[doc_impl]
+    struct MyStruct {
+        field: i32,
+    }
+
+    assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
 }
