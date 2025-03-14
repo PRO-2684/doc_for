@@ -18,7 +18,7 @@ fn parse_option_usize(expr: Expr) -> Result<Option<usize>> {
             let n: usize = lit_int.base10_parse()?;
             Ok(Some(n))
         }
-        _ => panic!("Expected `all` or integer literal"),
+        _ => Err(Error::new(expr.span(), "Expected `all` or integer literal")),
     }
 }
 

@@ -303,4 +303,5 @@ fn attr_doc_for_default() {
     }
 
     assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
+    // assert_eq!(doc_for!(MyStruct, non_existent_field), None); // Won't compile
 }

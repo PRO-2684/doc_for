@@ -9,8 +9,8 @@ use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::quote;
 use syn::{
-    parse_macro_input, Attribute, Data, DeriveInput, Expr, Fields, Ident, Lit, LitByteStr, LitInt,
-    LitStr, Meta,
+    parse_macro_input, Attribute, Data, DeriveInput, Error, Expr, Fields, Ident, Lit, LitByteStr,
+    LitInt, LitStr, Meta,
 };
 
 // Helper functions
@@ -205,13 +205,15 @@ fn gen_doc_for_impl(input: TokenStream, strip: Option<usize>) -> TokenStream {
 /// - `strip`: The number of leading whitespace characters to strip from the documentation comments. If `None`, all will be stripped; if `Some(n)`, `n` whitespace characters will be stripped, if present.
 fn gen_doc_dyn_impl(input: TokenStream, strip: Option<usize>) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    let name = input.ident;
+    let name = &input.ident;
 
     let doc_for_variant_body = match input.data {
         Data::Enum(data) => {
             generate_arms_enum(data.variants.into_iter().map(|v| (v.ident, v.attrs)), strip)
         }
-        _ => ::core::panic!("DocDyn can only be derived for enums"),
+        _ => {
+            Error::new_spanned(&input, "DocDyn can only be derived for enums").into_compile_error()
+        }
     };
     let doc_for_variant_impl = quote! {
         impl ::doc_for::DocDyn for #name {
@@ -258,7 +260,7 @@ pub fn doc_dyn_derive(input: TokenStream) -> TokenStream {
 pub fn doc_impl(attrs: TokenStream, mut input: TokenStream) -> TokenStream {
     let attrs: Attrs = match syn::parse(attrs) {
         Ok(attrs) => attrs,
-        Err(err) => return syn::Error::into_compile_error(err).into(),
+        Err(err) => return Error::into_compile_error(err).into(),
     };
     let mut generated = TokenStream::new();
 
