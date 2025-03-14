@@ -276,13 +276,3 @@ pub fn doc_impl(attrs: TokenStream, mut input: TokenStream) -> TokenStream {
     input.extend(generated);
     input
 }
-
-// /// Derives the `DocDyn` trait for an enum type, providing `doc_dyn` method.
-// ///
-// /// # Parameters
-// ///
-// /// - `strip`: The number of leading whitespace characters to strip from the documentation comments. If `all`, all will be stripped; if `n`, `n` whitespace characters will be stripped, if present. Default is `0`.
-// #[proc_macro_attribute]
-// pub fn doc_dyn(attr: TokenStream, input: TokenStream) -> TokenStream {
-//     gen_doc_dyn_impl(input, parse_strip_attr(attr))
-// }
