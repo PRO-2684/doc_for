@@ -18,7 +18,7 @@ use syn::{
 /// Get the documentation comment from the attributes.
 fn get_doc(attrs: &Vec<syn::Attribute>, strip: Option<usize>) -> Option<String> {
     let doc_lines = attrs
-        .into_iter()
+        .iter()
         .filter(|attr| attr.path().is_ident("doc"))
         .filter_map(|attr| {
             let Meta::NameValue(nv) = &attr.meta else {
@@ -60,13 +60,10 @@ fn get_doc(attrs: &Vec<syn::Attribute>, strip: Option<usize>) -> Option<String> 
 /// Generate the return value for a match arm, given the attributes of a field or variant. Used in the `generate_arms` and `generate_arms_index` functions.
 fn generate_arm_value(attrs: Vec<Attribute>, strip: Option<usize>) -> proc_macro2::TokenStream {
     let doc = get_doc(&attrs, strip);
-    match doc {
-        Some(doc) => {
-            let lit_doc = LitStr::new(&doc, Span::call_site());
-            quote! { ::core::option::Option::Some(#lit_doc) }
-        }
-        None => quote! { ::core::option::Option::None },
-    }
+    if let Some(doc) = doc {
+        let lit_doc = LitStr::new(&doc, Span::call_site());
+        quote! { ::core::option::Option::Some(#lit_doc) }
+    } else { quote! { ::core::option::Option::None } }
 }
 
 /// Takes an iterator of (ident, attributes) pairs and generates a match expression that matches on field names. Used to generate the match arms for the `doc_for_field` method.
@@ -136,13 +133,10 @@ fn gen_doc_for_impl(input: DeriveInput, strip: Option<usize>) -> TokenStream {
 
     // Get the documentation comment for the type.
     let doc_for_type = get_doc(&input.attrs, strip);
-    let doc_for_type_ret = match doc_for_type {
-        Some(doc) => {
-            let lit_doc = LitStr::new(&doc, Span::call_site());
-            quote! { ::core::option::Option::Some(#lit_doc) }
-        }
-        None => quote! { ::core::option::Option::None },
-    };
+    let doc_for_type_ret = if let Some(doc) = doc_for_type {
+        let lit_doc = LitStr::new(&doc, Span::call_site());
+        quote! { ::core::option::Option::Some(#lit_doc) }
+    } else { quote! { ::core::option::Option::None } };
     let doc_for_type_impl = quote! {
         impl ::doc_for::DocFor for #name {
             const DOC: ::core::option::Option<&'static str> = #doc_for_type_ret;
@@ -228,7 +222,11 @@ fn gen_doc_dyn_impl(input: DeriveInput, strip: Option<usize>) -> TokenStream {
 }
 
 /// Generate attributes.
-fn gen_attrs(mut input: DeriveInput, attrs: Vec<String>, strip: Option<usize>) -> Result<DeriveInput, Error> {
+fn gen_attrs(
+    input: &mut DeriveInput,
+    attrs: Vec<String>,
+    strip: Option<usize>,
+) -> Result<(), Error> {
     fn update_attrs(
         target: &mut Vec<Attribute>,
         attr_templates: &[String],
@@ -241,7 +239,7 @@ fn gen_attrs(mut input: DeriveInput, attrs: Vec<String>, strip: Option<usize>) -
         for template in attr_templates {
             // Replace {doc} placeholder with documentation string literal
             let filled_template = template.replace("{doc}", &doc);
-            let attr_str = format!("#[{}]", filled_template);
+            let attr_str = format!("#[{filled_template}]");
 
             // Parse the attribute
             let tokens = syn::parse_str::<proc_macro2::TokenStream>(&attr_str)?;
@@ -303,7 +301,7 @@ fn gen_attrs(mut input: DeriveInput, attrs: Vec<String>, strip: Option<usize>) -
         }
     };
 
-    Ok(input)
+    Ok(())
 }
 
 // Derive macros
@@ -340,7 +338,7 @@ pub fn doc_dyn_derive(input: TokenStream) -> TokenStream {
 pub fn doc_impl(attrs: TokenStream, input: TokenStream) -> TokenStream {
     let attrs: Attrs = match syn::parse(attrs) {
         Ok(attrs) => attrs,
-        Err(err) => return Error::into_compile_error(err).into(),
+        Err(err) => return err.into_compile_error().into(),
     };
     let mut input: DeriveInput = parse_macro_input!(input);
     let mut generated = TokenStream::new();
@@ -354,13 +352,12 @@ pub fn doc_impl(attrs: TokenStream, input: TokenStream) -> TokenStream {
         generated.extend(doc_dyn_impl);
     }
     if !attrs.gen_attrs.is_empty() {
-        input = match gen_attrs(input, attrs.gen_attrs, attrs.strip) {
-            Ok(input) => input,
-            Err(err) => return err.into_compile_error().into(),
-        };
+        if let Err(err) = gen_attrs(&mut input, attrs.gen_attrs, attrs.strip) {
+            return err.into_compile_error().into();
+        }
     }
 
-    let mut input: TokenStream = input.into_token_stream().into();
-    input.extend(generated);
-    input
+    let mut result: TokenStream = input.into_token_stream().into();
+    result.extend(generated);
+    result
 }

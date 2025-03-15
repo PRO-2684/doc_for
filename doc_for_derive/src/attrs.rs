@@ -45,6 +45,7 @@ fn parse_string(expr: &Expr) -> Result<String> {
 }
 
 /// Attributes for the `doc_impl` attribute macro.
+#[derive(Debug, PartialEq)]
 pub struct Attrs {
     /// The number of leading whitespace characters to strip from the documentation comments.
     ///
@@ -74,7 +75,7 @@ impl Default for Attrs {
 impl Parse for Attrs {
     fn parse(input: ParseStream) -> Result<Self> {
         let parsed: Punctuated<MetaNameValue, Token![,]> = Punctuated::parse_terminated(input)?;
-        let mut attrs = Attrs::default();
+        let mut attrs = Self::default();
 
         for mnv in parsed {
             let (name, value) = (
@@ -146,23 +147,6 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_pair_string() {
-        assert_eq!(
-            parse_pair_string(parse_quote!(("a", "b"))).unwrap(),
-            ("a".to_string(), "b".to_string()),
-            "Expected `(\"a\", \"b\")`"
-        );
-        assert!(
-            parse_pair_string(parse_quote!(("a", "b", "c"))).is_err(),
-            "Expected error for `(\"a\", \"b\", \"c\")`"
-        );
-        assert!(
-            parse_pair_string(parse_quote!(("a", 5))).is_err(),
-            "Expected error for `(\"a\", 5)`"
-        );
-    }
-
-    #[test]
     fn test_parse_string() {
         assert_eq!(
             parse_string(&parse_quote!("hello")).unwrap(),
@@ -177,15 +161,16 @@ mod tests {
 
     #[test]
     fn test_parse_attrs() {
+        let parsed: Attrs = parse_quote!(strip = all, doc_for = false, doc_dyn = true, gen_attr = "error({doc})", gen_attr = "serde(rename = {doc})");
         assert_eq!(
-            parse_quote!(strip = all, doc_for = false, doc_dyn = true, gen_attr = ("a", "b"), gen_attr = ("c", "d")).parse::<Attrs>().unwrap(),
+            parsed,
             Attrs {
                 strip: None,
                 doc_for: false,
                 doc_dyn: true,
-                gen_attrs: vec![("a".to_string(), "b".to_string()), ("c".to_string(), "d".to_string())],
+                gen_attrs: vec!["error({doc})".to_string(), "serde(rename = {doc})".to_string()],
             },
-            "Expected `strip = all, doc_for = false, doc_dyn = true, gen_attr = (\"a\", \"b\"), gen_attr = (\"c\", \"d\")`"
+            "Expected `strip = all, doc_for = false, doc_dyn = true, gen_attr = \"error({{doc}})\", gen_attr = \"serde(rename = {{doc}})\"`"
         );
     }
 }
