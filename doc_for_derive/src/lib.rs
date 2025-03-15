@@ -9,7 +9,8 @@ use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::{quote, ToTokens};
 use syn::{
-    parse_macro_input, Attribute, Data, DeriveInput, Error, Expr, Fields, Ident, Lit, LitByteStr, LitInt, LitStr, Meta
+    parse_macro_input, Attribute, Data, DeriveInput, Error, Expr, Fields, Ident, Lit, LitByteStr,
+    LitInt, LitStr, Meta,
 };
 
 // Helper functions
@@ -230,7 +231,11 @@ fn gen_doc_dyn_impl(input: TokenStream, strip: Option<usize>) -> TokenStream {
 
 /// Generate attributes.
 fn gen_attrs(input: TokenStream, attrs: Vec<String>, strip: Option<usize>) -> TokenStream {
-    fn update_attrs(target: &mut Vec<Attribute>, attr_templates: &[String], doc: &str) -> Result<(), Error> {
+    fn update_attrs(
+        target: &mut Vec<Attribute>,
+        attr_templates: &[String],
+        doc: &str,
+    ) -> Result<(), Error> {
         use syn::parse::Parser;
 
         let doc = LitStr::new(doc, Span::call_site());
@@ -248,7 +253,10 @@ fn gen_attrs(input: TokenStream, attrs: Vec<String>, strip: Option<usize>) -> To
             if attrs.len() == 1 {
                 target.push(attrs.pop().unwrap()); // Safe to unwrap - we checked the length
             } else {
-                return Err(Error::new(Span::call_site(), "Expected exactly one attribute"));
+                return Err(Error::new(
+                    Span::call_site(),
+                    "Expected exactly one attribute",
+                ));
             }
         }
 
@@ -259,14 +267,15 @@ fn gen_attrs(input: TokenStream, attrs: Vec<String>, strip: Option<usize>) -> To
     match &mut input.data {
         Data::Struct(data) => {
             let fields = match &mut data.fields {
-                Fields::Named(fields) => {
-                    &mut fields.named
-                },
+                Fields::Named(fields) => &mut fields.named,
                 Fields::Unnamed(fields) => &mut fields.unnamed,
                 Fields::Unit => {
-                    return Error::new_spanned(&input, "Cannot generate field attributes for unit structs")
-                        .into_compile_error()
-                        .into()
+                    return Error::new_spanned(
+                        &input,
+                        "Cannot generate field attributes for unit structs",
+                    )
+                    .into_compile_error()
+                    .into()
                 }
             };
 
@@ -290,7 +299,7 @@ fn gen_attrs(input: TokenStream, attrs: Vec<String>, strip: Option<usize>) -> To
                     return e.into_compile_error().into();
                 };
             }
-        },
+        }
         Data::Enum(data) => {
             let variants = &mut data.variants;
 
@@ -302,7 +311,7 @@ fn gen_attrs(input: TokenStream, attrs: Vec<String>, strip: Option<usize>) -> To
                     return e.into_compile_error().into();
                 };
             }
-        },
+        }
     };
 
     input.into_token_stream().into()

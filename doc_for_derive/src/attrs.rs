@@ -121,7 +121,10 @@ mod tests {
             Some(5),
             "Expected `Some(5)` for `5`"
         );
-        assert!(parse_option_usize(parse_quote!(true)).is_err(), "Expected error for `true`");
+        assert!(
+            parse_option_usize(parse_quote!(true)).is_err(),
+            "Expected error for `true`"
+        );
     }
 
     #[test]
@@ -136,7 +139,10 @@ mod tests {
             false,
             "Expected `false`"
         );
-        assert!(parse_bool(parse_quote!(5)).is_err(), "Expected error for `5`");
+        assert!(
+            parse_bool(parse_quote!(5)).is_err(),
+            "Expected error for `5`"
+        );
     }
 
     #[test]
@@ -146,8 +152,14 @@ mod tests {
             ("a".to_string(), "b".to_string()),
             "Expected `(\"a\", \"b\")`"
         );
-        assert!(parse_pair_string(parse_quote!(("a", "b", "c"))).is_err(), "Expected error for `(\"a\", \"b\", \"c\")`");
-        assert!(parse_pair_string(parse_quote!(("a", 5))).is_err(), "Expected error for `(\"a\", 5)`");
+        assert!(
+            parse_pair_string(parse_quote!(("a", "b", "c"))).is_err(),
+            "Expected error for `(\"a\", \"b\", \"c\")`"
+        );
+        assert!(
+            parse_pair_string(parse_quote!(("a", 5))).is_err(),
+            "Expected error for `(\"a\", 5)`"
+        );
     }
 
     #[test]
@@ -157,7 +169,10 @@ mod tests {
             "hello".to_string(),
             "Expected `\"hello\"`"
         );
-        assert!(parse_string(&parse_quote!(5)).is_err(), "Expected error for `5`");
+        assert!(
+            parse_string(&parse_quote!(5)).is_err(),
+            "Expected error for `5`"
+        );
     }
 
     #[test]

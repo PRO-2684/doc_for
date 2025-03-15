@@ -328,16 +328,16 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 enum MyError {
-    /// Error1 documentation
+    /// Error1 message
     #[error("Error1 message")]
     Error1,
-    /// Error2 documentation
+    /// Error2 message
     #[error("Error2 message")]
     Error2,
 }
 ```
 
-Which seems quite repetitive. Luckily, `doc_impl` provides a way to automatically generate those repetitive attributes:
+Which seems quite repetitive. Luckily, `doc_impl` provides a way to automatically generate those repetitive attributes. Simply append `gen_attr = "your_attr({doc})"`, and respective documentation will take the place of `{doc}`:
 
 ```rust
 use doc_for::doc_impl;
@@ -380,6 +380,11 @@ let my_struct: MyStruct = serde_json::from_str(json).unwrap();
 assert_eq!(my_struct.field1, 1);
 assert_eq!(my_struct.field2, 2);
 ```
+
+Do note that:
+
+- `doc_impl` annotation must be placed BEFORE other annotations that introduced the attribute.
+- `gen_attr` can be used multiple times.
 
 ### The `derive` alternative
 
