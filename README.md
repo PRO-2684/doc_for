@@ -25,7 +25,7 @@ First, bring `doc_for` and `doc_impl` into scope:
 use doc_for::{doc_for, doc_impl};
 ```
 
-Then, annotate your struct with `#[doc_impl]`:
+Then, annotate your struct with `#[doc_impl]` attribute macro:
 
 ```rust
 # use doc_for::{doc_for, doc_impl};
@@ -109,7 +109,7 @@ assert_eq!(doc_for!(MyUnion).unwrap(), " Union documentation");
 
 ### Get the documentation comment for fields and variants
 
-Same as before, bring `doc_impl` and `doc_for!` into scope and annotate your struct with `#[doc_impl]`:
+Same as before, bring `doc_impl` and `doc_for!` into scope and annotate your struct with `#[doc_impl]` attribute macro:
 
 ```rust
 use doc_for::{doc_for, doc_impl};
@@ -326,7 +326,7 @@ assert_eq!(doc_for!(MyEnum, Variant).unwrap(), "Variant documentation");
 assert_eq!(MyEnum::Variant.doc_dyn().unwrap(), "Variant documentation");
 ```
 
-### Automatically generate attributes with documentation as parameters
+### Automatically generate attribute macros with documentation as parameters
 
 Consider the following scenario:
 
@@ -344,7 +344,7 @@ enum MyError {
 }
 ```
 
-Which seems quite repetitive. Luckily, `doc_impl` provides a way to automatically generate those repetitive attributes. Simply append `gen_attr = "your_attr({doc})"`, and respective documentation will take the place of `{doc}`:
+Which seems quite repetitive. Luckily, `doc_impl` provides a way to automatically generate those repetitive attribute macros. Simply append `gen_attr = "your_attr({doc})"`, and respective documentation will take the place of `{doc}`:
 
 ```rust
 use doc_for::doc_impl;
@@ -390,12 +390,12 @@ assert_eq!(my_struct.field2, 2);
 
 Do note that:
 
-- `doc_impl` annotation must be placed BEFORE other annotations that introduced the attribute.
+- `doc_impl` annotation must be placed BEFORE attribute macros that introduced the target attribute.
 - `gen_attr` can be used multiple times.
 
 ### The `derive` alternative
 
-If you prefer to use `derive`, you can use `DocFor` and `DocDyn` to replace `doc_for` and `doc_dyn` fields in the `doc_impl` attribute:
+If you prefer to use `derive`, you can use `DocFor` and `DocDyn` to replace `doc_for` and `doc_dyn` respectively:
 
 ```rust
 use doc_for::{DocDyn, DocFor, doc_for};
@@ -444,7 +444,7 @@ This method is not zero-cost, as it matches the enum variant at runtime.
 
 ### `doc_impl`
 
-The `doc_impl` attribute is used to derive the `DocFor` and `DocDyn` traits for a type, along with configuring the `strip` attribute. `gen_attr` attribute, when set, prepends the specified attribute to fields or variants.
+The `doc_impl` attribute macro is used to derive the `DocFor` and `DocDyn` traits for a type, along with configuring the `strip` attribute. `gen_attr` attribute, when set, prepends the specified attribute macros to fields or variants.
 
 ## ✅ TODO
 

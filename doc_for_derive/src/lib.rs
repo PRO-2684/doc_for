@@ -10,7 +10,7 @@ use proc_macro2::Span;
 use quote::{quote, ToTokens};
 use syn::{
     parse_macro_input, Attribute, Data, DeriveInput, Error, Expr, Fields, Ident, Lit, LitByteStr,
-    LitInt, LitStr, Meta,
+    LitInt, LitStr, Meta, Result,
 };
 
 // Helper functions
@@ -215,12 +215,12 @@ fn gen_doc_dyn_impl(input: DeriveInput, strip: Option<usize>) -> TokenStream {
 }
 
 /// Generate attributes.
-fn gen_attrs(input: &mut DeriveInput, attrs: &[String], strip: Option<usize>) -> Result<(), Error> {
+fn gen_attrs(input: &mut DeriveInput, attrs: &[String], strip: Option<usize>) -> Result<()> {
     fn update_attrs(
         target: &mut Vec<Attribute>,
         attr_templates: &[String],
         doc: &str,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         use syn::parse::Parser;
 
         let doc = LitStr::new(doc, Span::call_site());
@@ -241,7 +241,7 @@ fn gen_attrs(input: &mut DeriveInput, attrs: &[String], strip: Option<usize>) ->
             } else {
                 return Err(Error::new(
                     Span::call_site(),
-                    "Expected exactly one attribute",
+                    format!("Expected exactly 1 attribute, but got {}", attrs.len()),
                 ));
             }
         }
@@ -312,7 +312,7 @@ pub fn doc_dyn_derive(input: TokenStream) -> TokenStream {
     gen_doc_dyn_impl(input, Some(0)) // Don't strip by default
 }
 
-// Attribute macros
+// Attribute macro `doc_impl`
 
 /// Derives the `DocFor` trait and `doc_for_field` method for a type.
 ///

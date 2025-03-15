@@ -97,7 +97,7 @@ impl Parse for MacroAttrs {
                 "gen_attr" => {
                     attrs.gen_attrs.push(parse_string(&value)?);
                 }
-                _ => return Err(Error::new(name.span(), "Unknown attribute")),
+                _ => return Err(Error::new(name.span(), format!("Unknown attribute: `{name}`"))),
             }
         }
 
