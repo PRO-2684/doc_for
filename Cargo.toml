@@ -1,6 +1,6 @@
 [package]
 name = "doc_for"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 include = ["/src", "LICENSE", "README.md"]
 repository = "https://github.com/PRO-2684/doc_for"
@@ -11,7 +11,7 @@ keywords = ["documentation", "doc-comment", "zero-cost", "proc-macro"]
 categories = ["development-tools::procedural-macro-helpers"]
 
 [dependencies]
-doc_for_derive = { path = "doc_for_derive", version = "0.1.3" }
+doc_for_derive = { path = "doc_for_derive", version = "0.1.4" }
 
 [dev-dependencies]
 serde = { version = "1.0.219", features = ["derive"] }

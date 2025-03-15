@@ -40,9 +40,11 @@ version VERSION="none":
 [doc("Set version")]
 set-version VERSION:
     # Set version in Cargo.toml
-    sed -i "s/version = \".*\"/version = \"{{VERSION}}\"/" Cargo.toml
+    sed -i "s/^version = \".*\"/version = \"{{VERSION}}\"/" Cargo.toml
+    # Also updating the line `doc_for_derive = { path = "doc_for_derive", version = "0.1.3" }`
+    sed -i "s/^doc_for_derive = { path = \"doc_for_derive\", version = \".*\" }/doc_for_derive = { path = \"doc_for_derive\", version = \"{{VERSION}}\" }/" Cargo.toml
     # Set version in doc_for_derive/Cargo.toml
-    sed -i "s/version = \".*\"/version = \"{{VERSION}}\"/" doc_for_derive/Cargo.toml
+    sed -i "s/^version = \".*\"/version = \"{{VERSION}}\"/" doc_for_derive/Cargo.toml
     cargo generate-lockfile
     # Add changes to git
     git add Cargo.toml doc_for_derive/Cargo.toml Cargo.lock
