@@ -308,20 +308,20 @@ fn attr_doc_for_default() {
 
 #[test]
 fn attr_doc_for_gen_attrs() {
-    use doc_for::{doc, doc_impl};
+    use doc_for::doc_impl;
     use thiserror::Error;
 
     /// Some documentation
     #[doc_impl(strip = 1, gen_attr = "error({doc})")]
     #[derive(Debug, Error)]
     enum MyError {
-        /// Error1 documentation
+        /// Error1 message
         Error1,
-        /// Error2 documentation
+        /// Error2 message
         Error2,
     }
 
     // Check Display implementation
-    assert_eq!(format!("{}", MyError::Error1), "Error1 documentation");
-    assert_eq!(format!("{}", MyError::Error2), "Error2 documentation");
+    assert_eq!(format!("{}", MyError::Error1), "Error1 message");
+    assert_eq!(format!("{}", MyError::Error2), "Error2 message");
 }

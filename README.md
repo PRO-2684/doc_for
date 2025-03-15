@@ -13,7 +13,7 @@
 ## 🪄 Features
 
 - **Zero-cost**: All work is done at compile-time
-- **Simple**: Just annotate your struct with `#[doc_impl]` and use the `doc_for!` macro
+- **Simple**: Just annotate your struct with `#[doc_impl]` and use the `doc_for!` or `doc!` macro
 
 ## 🤔 Usage
 
@@ -317,6 +317,68 @@ enum MyEnum {
 
 assert_eq!(doc_for!(MyEnum, Variant).unwrap(), "Variant documentation");
 assert_eq!(MyEnum::Variant.doc_dyn().unwrap(), "Variant documentation");
+```
+
+### Automatically generate attributes with documentation as parameters
+
+Consider the following scenario:
+
+```rust
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+enum MyError {
+    /// Error1 documentation
+    #[error("Error1 message")]
+    Error1,
+    /// Error2 documentation
+    #[error("Error2 message")]
+    Error2,
+}
+```
+
+Which seems quite repetitive. Luckily, `doc_impl` provides a way to automatically generate those repetitive attributes:
+
+```rust
+use doc_for::doc_impl;
+use thiserror::Error;
+
+/// Some documentation
+#[doc_impl(strip = 1, gen_attr = "error({doc})")]
+#[derive(Debug, Error)]
+enum MyError {
+    /// Error1 message
+    Error1,
+    /// Error2 message
+    Error2,
+}
+
+assert_eq!(format!("{}", MyError::Error1), "Error1 message");
+assert_eq!(format!("{}", MyError::Error2), "Error2 message");
+```
+
+Also works on struct fields, where you might want to generate `#[serde(rename = "...")]` attributes:
+
+```rust
+use doc_for::doc_impl;
+use serde::Deserialize;
+
+/// Some documentation
+#[doc_impl(strip = 1, gen_attr = "serde(rename = {doc})")]
+#[derive(Deserialize)]
+struct MyStruct {
+    /// field1_rename
+    // No need for #[serde(rename = "field1_rename")]
+    field1: i32,
+    /// field2_rename
+    // No need for #[serde(rename = "field2_rename")]
+    field2: i32,
+}
+
+let json = r#"{"field1_rename": 1, "field2_rename": 2}"#;
+let my_struct: MyStruct = serde_json::from_str(json).unwrap();
+assert_eq!(my_struct.field1, 1);
+assert_eq!(my_struct.field2, 2);
 ```
 
 ### The `derive` alternative
