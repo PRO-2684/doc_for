@@ -7,27 +7,26 @@ mod attrs;
 use attrs::Attrs;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{
-    parse_macro_input, Attribute, Data, DeriveInput, Error, Expr, Fields, Ident, Lit, LitByteStr,
-    LitInt, LitStr, Meta,
+    parse_macro_input, Attribute, Data, DeriveInput, Error, Expr, Fields, Ident, Lit, LitByteStr, LitInt, LitStr, Meta
 };
 
 // Helper functions
 
 /// Get the documentation comment from the attributes.
-fn get_doc(attrs: Vec<syn::Attribute>, strip: Option<usize>) -> Option<String> {
+fn get_doc(attrs: &Vec<syn::Attribute>, strip: Option<usize>) -> Option<String> {
     let doc_lines = attrs
         .into_iter()
         .filter(|attr| attr.path().is_ident("doc"))
         .filter_map(|attr| {
-            let Meta::NameValue(nv) = attr.meta else {
+            let Meta::NameValue(nv) = &attr.meta else {
                 return None;
             };
-            let Expr::Lit(expr_lit) = nv.value else {
+            let Expr::Lit(expr_lit) = &nv.value else {
                 return None;
             };
-            let Lit::Str(lit_str) = expr_lit.lit else {
+            let Lit::Str(lit_str) = &expr_lit.lit else {
                 return None;
             };
             // Strip leading whitespaces
@@ -59,7 +58,7 @@ fn get_doc(attrs: Vec<syn::Attribute>, strip: Option<usize>) -> Option<String> {
 
 /// Generate the return value for a match arm, given the attributes of a field or variant. Used in the `generate_arms` and `generate_arms_index` functions.
 fn generate_arm_value(attrs: Vec<Attribute>, strip: Option<usize>) -> proc_macro2::TokenStream {
-    let doc = get_doc(attrs, strip);
+    let doc = get_doc(&attrs, strip);
     match doc {
         Some(doc) => {
             let lit_doc = LitStr::new(&doc, Span::call_site());
@@ -136,7 +135,7 @@ fn gen_doc_for_impl(input: TokenStream, strip: Option<usize>) -> TokenStream {
     let name = input.ident;
 
     // Get the documentation comment for the type.
-    let doc_for_type = get_doc(input.attrs, strip);
+    let doc_for_type = get_doc(&input.attrs, strip);
     let doc_for_type_ret = match doc_for_type {
         Some(doc) => {
             let lit_doc = LitStr::new(&doc, Span::call_site());
@@ -204,7 +203,7 @@ fn gen_doc_for_impl(input: TokenStream, strip: Option<usize>) -> TokenStream {
 ///
 /// - `strip`: The number of leading whitespace characters to strip from the documentation comments. If `None`, all will be stripped; if `Some(n)`, `n` whitespace characters will be stripped, if present.
 fn gen_doc_dyn_impl(input: TokenStream, strip: Option<usize>) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
+    let input: DeriveInput = parse_macro_input!(input);
     let name = &input.ident;
 
     let doc_for_variant_body = match input.data {
@@ -227,6 +226,86 @@ fn gen_doc_dyn_impl(input: TokenStream, strip: Option<usize>) -> TokenStream {
         #doc_for_variant_impl
     };
     expanded.into()
+}
+
+/// Generate attributes.
+fn gen_attrs(input: TokenStream, attrs: Vec<String>, strip: Option<usize>) -> TokenStream {
+    fn update_attrs(target: &mut Vec<Attribute>, attr_templates: &[String], doc: &str) -> Result<(), Error> {
+        use syn::parse::Parser;
+
+        let doc = LitStr::new(doc, Span::call_site());
+        let doc = doc.to_token_stream().to_string();
+        for template in attr_templates {
+            // Replace {doc} placeholder with documentation string literal
+            let filled_template = template.replace("{doc}", &doc);
+            let attr_str = format!("#[{}]", filled_template);
+
+            // Parse the attribute
+            let tokens = syn::parse_str::<proc_macro2::TokenStream>(&attr_str)?;
+            let mut attrs = Attribute::parse_outer.parse2(tokens).unwrap_or_default();
+
+            // This should give us exactly one attribute if parsing succeeded
+            if attrs.len() == 1 {
+                target.push(attrs.pop().unwrap()); // Safe to unwrap - we checked the length
+            } else {
+                return Err(Error::new(Span::call_site(), "Expected exactly one attribute"));
+            }
+        }
+
+        Ok(())
+    }
+
+    let mut input: DeriveInput = parse_macro_input!(input);
+    match &mut input.data {
+        Data::Struct(data) => {
+            let fields = match &mut data.fields {
+                Fields::Named(fields) => {
+                    &mut fields.named
+                },
+                Fields::Unnamed(fields) => &mut fields.unnamed,
+                Fields::Unit => {
+                    return Error::new_spanned(&input, "Cannot generate field attributes for unit structs")
+                        .into_compile_error()
+                        .into()
+                }
+            };
+
+            for field in fields {
+                let Some(doc) = get_doc(&field.attrs, strip) else {
+                    continue;
+                };
+                if let Err(e) = update_attrs(&mut field.attrs, &attrs, &doc) {
+                    return e.into_compile_error().into();
+                };
+            }
+        }
+        Data::Union(data) => {
+            let fields = &mut data.fields.named;
+
+            for field in fields {
+                let Some(doc) = get_doc(&field.attrs, strip) else {
+                    continue;
+                };
+                if let Err(e) = update_attrs(&mut field.attrs, &attrs, &doc) {
+                    return e.into_compile_error().into();
+                };
+            }
+        },
+        Data::Enum(data) => {
+            let variants = &mut data.variants;
+
+            for variant in variants {
+                let Some(doc) = get_doc(&variant.attrs, strip) else {
+                    continue;
+                };
+                if let Err(e) = update_attrs(&mut variant.attrs, &attrs, &doc) {
+                    return e.into_compile_error().into();
+                };
+            }
+        },
+    };
+
+    input.into_token_stream().into()
 }
 
 // Derive macros
@@ -256,6 +335,7 @@ pub fn doc_dyn_derive(input: TokenStream) -> TokenStream {
 /// - `strip`: The number of leading whitespace characters to strip from the documentation comments. If `all`, all will be stripped; if `n`, `n` whitespace characters will be stripped, if present. Default is `0`.
 /// - `doc_for`: Whether to generate implementation for `DocFor` and `doc_for_field`. Default is `true`.
 /// - `doc_dyn`: Whether to generate implementation for `DocDyn` for an enum. Default is `false`.
+/// - `gen_attr`: An attribute to generate for each field. Can be used multiple times. Example: `#[doc_impl(strip = 0, gen_attr = ("error({doc})")]`.
 #[proc_macro_attribute]
 pub fn doc_impl(attrs: TokenStream, mut input: TokenStream) -> TokenStream {
     let attrs: Attrs = match syn::parse(attrs) {
@@ -271,6 +351,9 @@ pub fn doc_impl(attrs: TokenStream, mut input: TokenStream) -> TokenStream {
     if attrs.doc_dyn {
         let doc_dyn_impl = gen_doc_dyn_impl(input.clone(), attrs.strip);
         generated.extend(doc_dyn_impl);
+    }
+    if !attrs.gen_attrs.is_empty() {
+        input = gen_attrs(input, attrs.gen_attrs, attrs.strip);
     }
 
     input.extend(generated);

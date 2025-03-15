@@ -305,3 +305,23 @@ fn attr_doc_for_default() {
     assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
     // assert_eq!(doc_for!(MyStruct, non_existent_field), None); // Won't compile
 }
+
+#[test]
+fn attr_doc_for_gen_attrs() {
+    use doc_for::{doc, doc_impl};
+    use thiserror::Error;
+
+    /// Some documentation
+    #[doc_impl(strip = 1, gen_attr = "error({doc})")]
+    #[derive(Debug, Error)]
+    enum MyError {
+        /// Error1 documentation
+        Error1,
+        /// Error2 documentation
+        Error2,
+    }
+
+    // Check Display implementation
+    assert_eq!(format!("{}", MyError::Error1), "Error1 documentation");
+    assert_eq!(format!("{}", MyError::Error2), "Error2 documentation");
+}
