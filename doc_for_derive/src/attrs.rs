@@ -45,8 +45,8 @@ fn parse_string(expr: &Expr) -> Result<String> {
 }
 
 /// Attributes for the `doc_impl` attribute macro.
-#[derive(Debug, PartialEq)]
-pub struct Attrs {
+#[derive(Debug, PartialEq, Eq)]
+pub struct MacroAttrs {
     /// The number of leading whitespace characters to strip from the documentation comments.
     ///
     /// If `None`, all will be stripped; if `Some(n)`, `n` whitespace characters will be stripped, if present. Default is `Some(0)`.
@@ -61,7 +61,7 @@ pub struct Attrs {
     pub gen_attrs: Vec<String>,
 }
 
-impl Default for Attrs {
+impl Default for MacroAttrs {
     fn default() -> Self {
         Self {
             strip: Some(0),
@@ -72,7 +72,7 @@ impl Default for Attrs {
     }
 }
 
-impl Parse for Attrs {
+impl Parse for MacroAttrs {
     fn parse(input: ParseStream) -> Result<Self> {
         let parsed: Punctuated<MetaNameValue, Token![,]> = Punctuated::parse_terminated(input)?;
         let mut attrs = Self::default();
@@ -81,7 +81,7 @@ impl Parse for Attrs {
             let (name, value) = (
                 mnv.path
                     .get_ident()
-                    .ok_or(Error::new(mnv.span(), "Expected an identifier"))?,
+                    .ok_or_else(|| Error::new(mnv.span(), "Expected an identifier"))?,
                 mnv.value,
             );
             match name.to_string().as_str() {
@@ -130,14 +130,9 @@ mod tests {
 
     #[test]
     fn test_parse_bool() {
-        assert_eq!(
-            parse_bool(parse_quote!(true)).unwrap(),
-            true,
-            "Expected `true`"
-        );
-        assert_eq!(
-            parse_bool(parse_quote!(false)).unwrap(),
-            false,
+        assert!(parse_bool(parse_quote!(true)).unwrap(), "Expected `true`");
+        assert!(
+            !parse_bool(parse_quote!(false)).unwrap(),
             "Expected `false`"
         );
         assert!(
@@ -161,10 +156,16 @@ mod tests {
 
     #[test]
     fn test_parse_attrs() {
-        let parsed: Attrs = parse_quote!(strip = all, doc_for = false, doc_dyn = true, gen_attr = "error({doc})", gen_attr = "serde(rename = {doc})");
+        let parsed: MacroAttrs = parse_quote!(
+            strip = all,
+            doc_for = false,
+            doc_dyn = true,
+            gen_attr = "error({doc})",
+            gen_attr = "serde(rename = {doc})"
+        );
         assert_eq!(
             parsed,
-            Attrs {
+            MacroAttrs {
                 strip: None,
                 doc_for: false,
                 doc_dyn: true,

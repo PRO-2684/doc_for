@@ -4,7 +4,7 @@
 
 mod attrs;
 
-use attrs::Attrs;
+use attrs::MacroAttrs;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::{quote, ToTokens};
@@ -16,7 +16,7 @@ use syn::{
 // Helper functions
 
 /// Get the documentation comment from the attributes.
-fn get_doc(attrs: &Vec<syn::Attribute>, strip: Option<usize>) -> Option<String> {
+fn get_doc(attrs: &[Attribute], strip: Option<usize>) -> Option<String> {
     let doc_lines = attrs
         .iter()
         .filter(|attr| attr.path().is_ident("doc"))
@@ -31,24 +31,11 @@ fn get_doc(attrs: &Vec<syn::Attribute>, strip: Option<usize>) -> Option<String> 
                 return None;
             };
             // Strip leading whitespaces
-            let line = lit_str.value();
-            if let Some(mut n) = strip {
-                // Strip at most `n` leading whitespaces
-                Some(
-                    line.trim_start_matches(|c: char| -> bool {
-                        if n > 0 && c.is_whitespace() {
-                            n -= 1;
-                            true
-                        } else {
-                            false
-                        }
-                    })
-                    .to_string(),
-                )
-            } else {
-                // Strip all leading whitespaces
-                Some(line.trim_start().to_string())
-            }
+            let mut line = lit_str.value();
+            let whitespaces = line.find(|c: char| !c.is_whitespace()).unwrap_or(0);
+            let count = strip.map_or(whitespaces, |n| whitespaces.min(n));
+            line.drain(..count);
+            Some(line)
         });
     doc_lines.reduce(|mut acc, line| {
         acc.push('\n');
@@ -58,12 +45,15 @@ fn get_doc(attrs: &Vec<syn::Attribute>, strip: Option<usize>) -> Option<String> 
 }
 
 /// Generate the return value for a match arm, given the attributes of a field or variant. Used in the `generate_arms` and `generate_arms_index` functions.
-fn generate_arm_value(attrs: Vec<Attribute>, strip: Option<usize>) -> proc_macro2::TokenStream {
-    let doc = get_doc(&attrs, strip);
-    if let Some(doc) = doc {
-        let lit_doc = LitStr::new(&doc, Span::call_site());
-        quote! { ::core::option::Option::Some(#lit_doc) }
-    } else { quote! { ::core::option::Option::None } }
+fn generate_arm_value(attrs: &[Attribute], strip: Option<usize>) -> proc_macro2::TokenStream {
+    let doc = get_doc(attrs, strip);
+    doc.map_or_else(
+        || quote! { ::core::option::Option::None },
+        |doc| {
+            let lit_doc = LitStr::new(&doc, Span::call_site());
+            quote! { ::core::option::Option::Some(#lit_doc) }
+        },
+    )
 }
 
 /// Takes an iterator of (ident, attributes) pairs and generates a match expression that matches on field names. Used to generate the match arms for the `doc_for_field` method.
@@ -75,7 +65,7 @@ where
         let field_or_variant = ident.to_string();
         // Convert the name to a byte string literal (Rust doesn't allow matching on string literals in const functions).
         let field_or_variant = LitByteStr::new(field_or_variant.as_bytes(), Span::call_site());
-        let arm_value = generate_arm_value(attrs, strip);
+        let arm_value = generate_arm_value(&attrs, strip);
         quote! { #field_or_variant => #arm_value, }
     });
     quote! {
@@ -94,7 +84,7 @@ where
 {
     let arms = iter.enumerate().map(|(field_index, attrs)| {
         let field_index = LitInt::new(&field_index.to_string(), Span::call_site());
-        let arm_value = generate_arm_value(attrs, strip);
+        let arm_value = generate_arm_value(&attrs, strip);
         quote! { #field_index => #arm_value, }
     });
     quote! {
@@ -111,7 +101,7 @@ where
     I: Iterator<Item = (Ident, Vec<syn::Attribute>)>,
 {
     let arms = iter.map(|(ident, attrs)| {
-        let arm_value = generate_arm_value(attrs, strip);
+        let arm_value = generate_arm_value(&attrs, strip);
         quote! { Self::#ident => #arm_value, }
     });
     quote! {
@@ -133,10 +123,13 @@ fn gen_doc_for_impl(input: DeriveInput, strip: Option<usize>) -> TokenStream {
 
     // Get the documentation comment for the type.
     let doc_for_type = get_doc(&input.attrs, strip);
-    let doc_for_type_ret = if let Some(doc) = doc_for_type {
-        let lit_doc = LitStr::new(&doc, Span::call_site());
-        quote! { ::core::option::Option::Some(#lit_doc) }
-    } else { quote! { ::core::option::Option::None } };
+    let doc_for_type_ret = doc_for_type.map_or_else(
+        || quote! { ::core::option::Option::None },
+        |doc| {
+            let lit_doc = LitStr::new(&doc, Span::call_site());
+            quote! { ::core::option::Option::Some(#lit_doc) }
+        },
+    );
     let doc_for_type_impl = quote! {
         impl ::doc_for::DocFor for #name {
             const DOC: ::core::option::Option<&'static str> = #doc_for_type_ret;
@@ -158,7 +151,7 @@ fn gen_doc_for_impl(input: DeriveInput, strip: Option<usize>) -> TokenStream {
                 numeric = true;
                 generate_arms_index(fields.unnamed.into_iter().map(|f| f.attrs), strip)
             }
-            _ => quote! { ::core::option::Option::None },
+            Fields::Unit => quote! { ::core::option::Option::None },
         },
         Data::Union(data) => generate_arms(
             data.fields
@@ -222,11 +215,7 @@ fn gen_doc_dyn_impl(input: DeriveInput, strip: Option<usize>) -> TokenStream {
 }
 
 /// Generate attributes.
-fn gen_attrs(
-    input: &mut DeriveInput,
-    attrs: Vec<String>,
-    strip: Option<usize>,
-) -> Result<(), Error> {
+fn gen_attrs(input: &mut DeriveInput, attrs: &[String], strip: Option<usize>) -> Result<(), Error> {
     fn update_attrs(
         target: &mut Vec<Attribute>,
         attr_templates: &[String],
@@ -238,6 +227,7 @@ fn gen_attrs(
         let doc = doc.to_token_stream().to_string();
         for template in attr_templates {
             // Replace {doc} placeholder with documentation string literal
+            #[allow(clippy::literal_string_with_formatting_args, reason = "Intended")]
             let filled_template = template.replace("{doc}", &doc);
             let attr_str = format!("#[{filled_template}]");
 
@@ -276,7 +266,7 @@ fn gen_attrs(
                 let Some(doc) = get_doc(&field.attrs, strip) else {
                     continue;
                 };
-                update_attrs(&mut field.attrs, &attrs, &doc)?;
+                update_attrs(&mut field.attrs, attrs, &doc)?;
             }
         }
         Data::Union(data) => {
@@ -286,7 +276,7 @@ fn gen_attrs(
                 let Some(doc) = get_doc(&field.attrs, strip) else {
                     continue;
                 };
-                update_attrs(&mut field.attrs, &attrs, &doc)?;
+                update_attrs(&mut field.attrs, attrs, &doc)?;
             }
         }
         Data::Enum(data) => {
@@ -296,7 +286,7 @@ fn gen_attrs(
                 let Some(doc) = get_doc(&variant.attrs, strip) else {
                     continue;
                 };
-                update_attrs(&mut variant.attrs, &attrs, &doc)?;
+                update_attrs(&mut variant.attrs, attrs, &doc)?;
             }
         }
     };
@@ -336,7 +326,7 @@ pub fn doc_dyn_derive(input: TokenStream) -> TokenStream {
 /// - `gen_attr`: An attribute to generate for each field. Can be used multiple times. Example: `#[doc_impl(strip = 0, gen_attr = ("error({doc})")]`.
 #[proc_macro_attribute]
 pub fn doc_impl(attrs: TokenStream, input: TokenStream) -> TokenStream {
-    let attrs: Attrs = match syn::parse(attrs) {
+    let attrs: MacroAttrs = match syn::parse(attrs) {
         Ok(attrs) => attrs,
         Err(err) => return err.into_compile_error().into(),
     };
@@ -352,7 +342,7 @@ pub fn doc_impl(attrs: TokenStream, input: TokenStream) -> TokenStream {
         generated.extend(doc_dyn_impl);
     }
     if !attrs.gen_attrs.is_empty() {
-        if let Err(err) = gen_attrs(&mut input, attrs.gen_attrs, attrs.strip) {
+        if let Err(err) = gen_attrs(&mut input, &attrs.gen_attrs, attrs.strip) {
             return err.into_compile_error().into();
         }
     }

@@ -182,7 +182,7 @@ assert!(doc_for!(MyTupleStruct, 1).is_none());
 
 ### Stripping the documentation comment
 
-The `strip` attribute can be used to strip leading whitespace characters of the documentation comment. If `all`, all will be stripped; if `n`, `n` whitespace characters will be stripped, if present. Default is `0`.
+The `strip` attribute can be used to strip leading whitespace characters of the documentation comment. If `all`, all will be stripped; if `n`, at most `n` whitespace characters will be stripped. Default is `0`.
 
 ```rust
 use doc_for::{doc_for, doc_impl};
@@ -193,6 +193,13 @@ struct MyStruct {
     field: i32,
 }
 assert_eq!(doc_for!(MyStruct).unwrap(), "Some documentation");
+
+///  Two leading spaces
+#[doc_impl(strip = 1)]
+struct TwoLeadingSpaces {
+    field: i32,
+}
+assert_eq!(doc_for!(TwoLeadingSpaces).unwrap(), " Two leading spaces");
 
 ///          Too many spaces
 #[doc_impl(strip = all)]

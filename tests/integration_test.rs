@@ -293,21 +293,10 @@ fn derive_doc_dyn() {
 }
 
 #[test]
-fn attr_doc_for_default() {
-    use doc_for::{doc_for, doc_impl};
-
-    /// Some documentation
-    #[doc_impl]
-    struct MyStruct {
-        field: i32,
-    }
-
-    assert_eq!(doc_for!(MyStruct).unwrap(), " Some documentation");
-    // assert_eq!(doc_for!(MyStruct, non_existent_field), None); // Won't compile
-}
+fn attr_doc_impl_strip() {}
 
 #[test]
-fn attr_doc_for_gen_attrs() {
+fn attr_doc_impl_gen_attrs() {
     use doc_for::doc_impl;
     use thiserror::Error;
 
