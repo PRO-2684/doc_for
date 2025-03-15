@@ -351,7 +351,7 @@ use doc_for::doc_impl;
 use thiserror::Error;
 
 /// Some documentation
-#[doc_impl(strip = 1, gen_attr = "error({doc})")]
+#[doc_impl(strip = 1, doc_for = false, gen_attr = "error({doc})")]
 #[derive(Debug, Error)]
 enum MyError {
     /// Error1 message
@@ -371,7 +371,7 @@ use doc_for::doc_impl;
 use serde::Deserialize;
 
 /// Some documentation
-#[doc_impl(strip = 1, gen_attr = "serde(rename = {doc})")]
+#[doc_impl(strip = 1, doc_for = false, gen_attr = "serde(rename = {doc})")]
 #[derive(Deserialize)]
 struct MyStruct {
     /// field1_rename
@@ -413,7 +413,7 @@ assert_eq!(doc_for!(MyEnum, Variant).unwrap(), " Variant documentation");
 assert_eq!(MyEnum::Variant.doc_dyn().unwrap(), " Variant documentation");
 ```
 
-However, you won't be able to configure the `strip` attribute in this case.
+However, you won't be able to configure the `strip` and `gen_attr` attribute in this case.
 
 ## ⚙️ Implementation
 
@@ -444,7 +444,7 @@ This method is not zero-cost, as it matches the enum variant at runtime.
 
 ### `doc_impl`
 
-The `doc_impl` attribute is used to derive the `DocFor` and `DocDyn` traits for a type, along with configuring the `strip` attribute.
+The `doc_impl` attribute is used to derive the `DocFor` and `DocDyn` traits for a type, along with configuring the `strip` attribute. `gen_attr` attribute, when set, prepends the specified attribute to fields or variants.
 
 ## ✅ TODO
 

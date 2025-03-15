@@ -293,15 +293,12 @@ fn derive_doc_dyn() {
 }
 
 #[test]
-fn attr_doc_impl_strip() {}
-
-#[test]
 fn attr_doc_impl_gen_attrs() {
     use doc_for::doc_impl;
     use thiserror::Error;
 
     /// Some documentation
-    #[doc_impl(strip = 1, gen_attr = "error({doc})")]
+    #[doc_impl(strip = 1, doc_for = false, gen_attr = "error({doc})")]
     #[derive(Debug, Error)]
     enum MyError {
         /// Error1 message
