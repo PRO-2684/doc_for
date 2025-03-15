@@ -131,8 +131,7 @@ where
 /// # Parameters
 ///
 /// - `strip`: The number of leading whitespace characters to strip from the documentation comments. If `None`, all will be stripped; if `Some(n)`, `n` whitespace characters will be stripped, if present.
-fn gen_doc_for_impl(input: TokenStream, strip: Option<usize>) -> TokenStream {
-    let input: DeriveInput = parse_macro_input!(input);
+fn gen_doc_for_impl(input: DeriveInput, strip: Option<usize>) -> TokenStream {
     let name = input.ident;
 
     // Get the documentation comment for the type.
@@ -203,8 +202,7 @@ fn gen_doc_for_impl(input: TokenStream, strip: Option<usize>) -> TokenStream {
 /// # Parameters
 ///
 /// - `strip`: The number of leading whitespace characters to strip from the documentation comments. If `None`, all will be stripped; if `Some(n)`, `n` whitespace characters will be stripped, if present.
-fn gen_doc_dyn_impl(input: TokenStream, strip: Option<usize>) -> TokenStream {
-    let input: DeriveInput = parse_macro_input!(input);
+fn gen_doc_dyn_impl(input: DeriveInput, strip: Option<usize>) -> TokenStream {
     let name = &input.ident;
 
     let doc_for_variant_body = match input.data {
@@ -230,7 +228,7 @@ fn gen_doc_dyn_impl(input: TokenStream, strip: Option<usize>) -> TokenStream {
 }
 
 /// Generate attributes.
-fn gen_attrs(input: TokenStream, attrs: Vec<String>, strip: Option<usize>) -> TokenStream {
+fn gen_attrs(mut input: DeriveInput, attrs: Vec<String>, strip: Option<usize>) -> Result<DeriveInput, Error> {
     fn update_attrs(
         target: &mut Vec<Attribute>,
         attr_templates: &[String],
@@ -263,19 +261,16 @@ fn gen_attrs(input: TokenStream, attrs: Vec<String>, strip: Option<usize>) -> To
         Ok(())
     }
 
-    let mut input: DeriveInput = parse_macro_input!(input);
     match &mut input.data {
         Data::Struct(data) => {
             let fields = match &mut data.fields {
                 Fields::Named(fields) => &mut fields.named,
                 Fields::Unnamed(fields) => &mut fields.unnamed,
                 Fields::Unit => {
-                    return Error::new_spanned(
+                    return Err(Error::new_spanned(
                         &input,
                         "Cannot generate field attributes for unit structs",
-                    )
-                    .into_compile_error()
-                    .into()
+                    ));
                 }
             };
 
@@ -283,9 +278,7 @@ fn gen_attrs(input: TokenStream, attrs: Vec<String>, strip: Option<usize>) -> To
                 let Some(doc) = get_doc(&field.attrs, strip) else {
                     continue;
                 };
-                if let Err(e) = update_attrs(&mut field.attrs, &attrs, &doc) {
-                    return e.into_compile_error().into();
-                };
+                update_attrs(&mut field.attrs, &attrs, &doc)?;
             }
         }
         Data::Union(data) => {
@@ -295,9 +288,7 @@ fn gen_attrs(input: TokenStream, attrs: Vec<String>, strip: Option<usize>) -> To
                 let Some(doc) = get_doc(&field.attrs, strip) else {
                     continue;
                 };
-                if let Err(e) = update_attrs(&mut field.attrs, &attrs, &doc) {
-                    return e.into_compile_error().into();
-                };
+                update_attrs(&mut field.attrs, &attrs, &doc)?;
             }
         }
         Data::Enum(data) => {
@@ -307,14 +298,12 @@ fn gen_attrs(input: TokenStream, attrs: Vec<String>, strip: Option<usize>) -> To
                 let Some(doc) = get_doc(&variant.attrs, strip) else {
                     continue;
                 };
-                if let Err(e) = update_attrs(&mut variant.attrs, &attrs, &doc) {
-                    return e.into_compile_error().into();
-                };
+                update_attrs(&mut variant.attrs, &attrs, &doc)?;
             }
         }
     };
 
-    input.into_token_stream().into()
+    Ok(input)
 }
 
 // Derive macros
@@ -324,12 +313,14 @@ fn gen_attrs(input: TokenStream, attrs: Vec<String>, strip: Option<usize>) -> To
 /// Primarily intended for use with the `doc_for!` macro, but you can also use the derived constant and method directly via `MyType::DOC` and `MyType::doc_for_field("field")`.
 #[proc_macro_derive(DocFor)]
 pub fn doc_for_derive(input: TokenStream) -> TokenStream {
+    let input: DeriveInput = parse_macro_input!(input);
     gen_doc_for_impl(input, Some(0)) // Don't strip by default
 }
 
 /// Derives the `DocDyn` trait for an enum type, providing `doc_dyn` method. Does not strip leading whitespaces.
 #[proc_macro_derive(DocDyn)]
 pub fn doc_dyn_derive(input: TokenStream) -> TokenStream {
+    let input: DeriveInput = parse_macro_input!(input);
     gen_doc_dyn_impl(input, Some(0)) // Don't strip by default
 }
 
@@ -346,11 +337,12 @@ pub fn doc_dyn_derive(input: TokenStream) -> TokenStream {
 /// - `doc_dyn`: Whether to generate implementation for `DocDyn` for an enum. Default is `false`.
 /// - `gen_attr`: An attribute to generate for each field. Can be used multiple times. Example: `#[doc_impl(strip = 0, gen_attr = ("error({doc})")]`.
 #[proc_macro_attribute]
-pub fn doc_impl(attrs: TokenStream, mut input: TokenStream) -> TokenStream {
+pub fn doc_impl(attrs: TokenStream, input: TokenStream) -> TokenStream {
     let attrs: Attrs = match syn::parse(attrs) {
         Ok(attrs) => attrs,
         Err(err) => return Error::into_compile_error(err).into(),
     };
+    let mut input: DeriveInput = parse_macro_input!(input);
     let mut generated = TokenStream::new();
 
     if attrs.doc_for {
@@ -362,9 +354,13 @@ pub fn doc_impl(attrs: TokenStream, mut input: TokenStream) -> TokenStream {
         generated.extend(doc_dyn_impl);
     }
     if !attrs.gen_attrs.is_empty() {
-        input = gen_attrs(input, attrs.gen_attrs, attrs.strip);
+        input = match gen_attrs(input, attrs.gen_attrs, attrs.strip) {
+            Ok(input) => input,
+            Err(err) => return err.into_compile_error().into(),
+        };
     }
 
+    let mut input: TokenStream = input.into_token_stream().into();
     input.extend(generated);
     input
 }
