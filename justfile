@@ -45,7 +45,7 @@ set-version VERSION:
     sed -i "s/^doc_for_derive = { path = \"doc_for_derive\", version = \".*\" }/doc_for_derive = { path = \"doc_for_derive\", version = \"{{VERSION}}\" }/" Cargo.toml
     # Set version in doc_for_derive/Cargo.toml
     sed -i "s/^version = \".*\"/version = \"{{VERSION}}\"/" doc_for_derive/Cargo.toml
-    cargo generate-lockfile
+    cargo generate-lockfile && cd doc_for_derive && cargo generate-lockfile && cd ..
     # Add changes to git
     git add Cargo.toml doc_for_derive/Cargo.toml Cargo.lock
     # Commit changes
