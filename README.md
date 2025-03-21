@@ -148,8 +148,8 @@ If the field or variant does not exist, `doc_for!` will panic, thus failing the 
 #     field: i32,
 #     not_documented: i32,
 # }
-// Won't compile due to `Field or variant does not exist`
-assert_eq!(doc_for!(MyStruct, non_existent), None);
+// Won't compile due to `The field or variant does not exist`
+assert!(doc_for!(MyStruct, non_existent).is_none());
 ```
 
 Similarly, it also works with union fields (not listed here), enum variants and tuple struct fields:
@@ -165,7 +165,7 @@ enum MyEnum {
 }
 assert_eq!(doc_for!(MyEnum, Variant).unwrap(), " Variant documentation");
 assert!(doc_for!(MyEnum, NotDocumented).is_none());
-// Won't compile due to `Field or variant does not exist`
+// Won't compile due to `The field or variant does not exist`
 // assert_eq!(doc_for!(MyEnum, NonExistent), None);
 
 #[doc_impl]
@@ -176,7 +176,7 @@ struct MyTupleStruct(
 );
 assert_eq!(doc_for!(MyTupleStruct, 0).unwrap(), " Tuple struct field documentation");
 assert!(doc_for!(MyTupleStruct, 1).is_none());
-// Won't compile due to `Field or variant does not exist`
+// Won't compile due to `The field or variant does not exist`
 // assert_eq!(doc_for!(MyTupleStruct, 2), None);
 ```
 
@@ -252,11 +252,11 @@ println!("{}", doc!(MyStruct));
 #    not_documented: i32,
 # }
 #
-// Won't compile due to `The field is not documented`
+// Won't compile due to `The field or variant is not documented`
 println!("{}", doc!(MyStruct, not_documented));
 ```
 
-Of course, trying to access a non-existent field or variant will also fail the compilation:
+As you might have expected, trying to access a non-existent field or variant will still fail the compilation:
 
 ```rust compile_fail
 # use doc_for::{doc, doc_impl};
@@ -268,7 +268,7 @@ Of course, trying to access a non-existent field or variant will also fail the c
 #    not_documented: i32,
 # }
 #
-// Won't compile due to `Field or variant does not exist`
+// Won't compile due to `The field or variant does not exist`
 println!("{}", doc!(MyStruct, non_existent));
 ```
 
@@ -448,7 +448,7 @@ The `doc_impl` attribute macro is used to derive the `DocFor` and `DocDyn` trait
 
 ## ✅ TODO
 
-- [ ] Strip each line of the documentation comment, via a `strip` attribute
+- [x] Strip each line of the documentation comment, via a `strip` attribute
 - [ ] Better error reporting and handling
 - [ ] Access module documentation (e.g. `doc_for!(my_module)`)
 - [ ] Access trait documentation (e.g. `doc_for!(MyTrait)`)
