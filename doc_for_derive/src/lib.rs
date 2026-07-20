@@ -120,6 +120,7 @@ where
 /// - `strip`: The number of leading whitespace characters to strip from the documentation comments. If `None`, all will be stripped; if `Some(n)`, `n` whitespace characters will be stripped, if present.
 fn gen_doc_for_impl(input: DeriveInput, strip: Option<usize>) -> TokenStream {
     let name = input.ident;
+    let vis = input.vis;
 
     // Get the documentation comment for the type.
     let doc_for_type = get_doc(&input.attrs, strip);
@@ -171,7 +172,7 @@ fn gen_doc_for_impl(input: DeriveInput, strip: Option<usize>) -> TokenStream {
     };
     let doc_for_field_impl = quote! {
         impl #name {
-            const fn doc_for_field(#doc_for_field_input) -> ::core::option::Option<&'static str> {
+            #vis const fn doc_for_field(#doc_for_field_input) -> ::core::option::Option<&'static str> {
                 #doc_for_field_body
             }
         }
