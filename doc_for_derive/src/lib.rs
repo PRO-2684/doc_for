@@ -171,7 +171,7 @@ fn gen_doc_for_impl(input: DeriveInput, strip: Option<usize>) -> TokenStream {
     };
     let doc_for_field_impl = quote! {
         impl #name {
-            const fn doc_for_field(#doc_for_field_input) -> ::core::option::Option<&'static str> {
+            pub const fn doc_for_field(#doc_for_field_input) -> ::core::option::Option<&'static str> {
                 #doc_for_field_body
             }
         }
