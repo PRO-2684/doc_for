@@ -1,0 +1,13 @@
+description = "\u001b[1;36m{{project-name}}\u001b[22;39m: {{project-description}}"
+
+[[recipes]]
+names = ["test", "t"]
+description = "Run \u001b[4mt\u001b[24mests"
+arguments = ["*rest"]
+command = ["cargo", "test", ["*rest"]]
+
+[[recipes]]
+names = ["version", "v"]
+description = "Set or get \u001b[4mv\u001b[24mersion"
+arguments = ["?version"]
+command = ["./scripts/version.sh", ["?version"]]
