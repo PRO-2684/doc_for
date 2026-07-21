@@ -5,7 +5,7 @@
 [![Crates.io Total Downloads](https://img.shields.io/crates/d/doc_for?logo=rust)](https://crates.io/crates/doc_for)
 [![docs.rs](https://img.shields.io/docsrs/doc_for?logo=rust)](https://docs.rs/doc_for)
 
-> [WARNING]
+> [!WARNING]
 > This crate is still in development, and the API is subject to BREAKING CHANGES.
 
 📖 Get the documentation comment for structs, enums and unions, in a zero-cost fashion.
